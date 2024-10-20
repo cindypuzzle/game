@@ -14,10 +14,12 @@ const indexRouter = require('./routes/index');
 const memoryGameRouter = require('./routes/memory_game');
 const magicRingsRouter = require('./routes/magic_rings');
 const symmetricPartitionRouter = require('./routes/symmetric_partition');
+const spiralGalaxyRouter = require('./routes/spiralGalaxy');
 app.use('/', indexRouter);
 app.use('/game/memory-game', memoryGameRouter);
 app.use('/game/magic-rings', magicRingsRouter);
 app.use('/game/symmetric-partition', symmetricPartitionRouter);
+app.use('/game/spiral-galaxy', spiralGalaxyRouter);
 
 // 添加2048游戏的路由
 app.get('/game/2048', (req, res) => {

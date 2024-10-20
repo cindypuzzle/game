@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        #game-container {
+            text-align: center;
+        }
+        canvas {
+            border: 1px solid #000;
+            background-color: #fff;
+        }
+        #instructions {
+            max-width: 600px;
+            margin-top: 20px;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <h1><%= title %></h1>
+        <canvas id="gameCanvas" width="400" height="400"></canvas>
+    </div>
+    <div id="instructions">
+        <h2>游戏规则：</h2>
+        <ul>
+            <li>将网格划分为不同区域（星系）</li>
+            <li>每个区域有且仅有1个白色圆圈</li>
+            <li>圆圈是其区域的中心对称点（旋转180°后形状、位置和方向相同）</li>
+            <li>左键单击两点之间连接线段</li>
+            <li>右键单击标记X</li>
+            <li>按住Shift+单击可以为正方形着色</li>
+        </ul>
+    </div>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const gridSize = 8;
+        const cellSize = canvas.width / gridSize;
+
+        let grid = [];
+        let circles = [];
+
+        function initializeGrid() {
+            for (let i = 0; i < gridSize; i++) {
+                grid[i] = [];
+                for (let j = 0; j < gridSize; j++) {
+                    grid[i][j] = {
+                        top: false,
+                        right: false,
+                        bottom: false,
+                        left: false,
+                        filled: false,
+                        hasCircle: false
+                    };
+                }
+            }
+
+            // 随机放置圆圈
+            for (let i = 0; i < 3; i++) {
+                let x, y;
+                do {
+                    x = Math.floor(Math.random() * gridSize);
+                    y = Math.floor(Math.random() * gridSize);
+                } while (grid[x][y].hasCircle);
+                grid[x][y].hasCircle = true;
+                circles.push({x, y});
+            }
+        }
+
+        function drawGrid() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 绘制网格线
+            ctx.strokeStyle = '#ccc';
+            for (let i = 0; i <= gridSize; i++) {
+                ctx.beginPath();
+                ctx.moveTo(i * cellSize, 0);
+                ctx.lineTo(i * cellSize, canvas.height);
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.moveTo(0, i * cellSize);
+                ctx.lineTo(canvas.width, i * cellSize);
+                ctx.stroke();
+            }
+
+            // 绘制线段和填充
+            for (let i = 0; i < gridSize; i++) {
+                for (let j = 0; j < gridSize; j++) {
+                    const cell = grid[i][j];
+                    const x = i * cellSize;
+                    const y = j * cellSize;
+
+                    if (cell.filled) {
+                        ctx.fillStyle = 'rgba(0, 0, 255, 0.2)';
+                        ctx.fillRect(x, y, cellSize, cellSize);
+                    }
+
+                    ctx.strokeStyle = '#000';
+                    ctx.beginPath();
+                    if (cell.top) {
+                        ctx.moveTo(x, y);
+                        ctx.lineTo(x + cellSize, y);
+                    }
+                    if (cell.right) {
+                        ctx.moveTo(x + cellSize, y);
+                        ctx.lineTo(x + cellSize, y + cellSize);
+                    }
+                    if (cell.bottom) {
+                        ctx.moveTo(x, y + cellSize);
+                        ctx.lineTo(x + cellSize, y + cellSize);
+                    }
+                    if (cell.left) {
+                        ctx.moveTo(x, y);
+                        ctx.lineTo(x, y + cellSize);
+                    }
+                    ctx.stroke();
+                }
+            }
+
+            // 绘制圆圈
+            ctx.fillStyle = '#fff';
+            ctx.strokeStyle = '#000';
+            circles.forEach(circle => {
+                ctx.beginPath();
+                ctx.arc(circle.x * cellSize + cellSize / 2, circle.y * cellSize + cellSize / 2, cellSize / 4, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+            });
+        }
+
+        function handleClick(event) {
+            const rect = canvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+
+            const i = Math.floor(x / cellSize);
+            const j = Math.floor(y / cellSize);
+
+            if (event.shiftKey) {
+                grid[i][j].filled = !grid[i][j].filled;
+            } else if (event.button === 0) { // 左键
+                const edge = getClickedEdge(x % cellSize, y % cellSize);
+                if (edge) {
+                    grid[i][j][edge] = !grid[i][j][edge];
+                    if (edge === 'top' && j > 0) grid[i][j-1].bottom = grid[i][j].top;
+                    if (edge === 'right' && i < gridSize-1) grid[i+1][j].left = grid[i][j].right;
+                    if (edge === 'bottom' && j < gridSize-1) grid[i][j+1].top = grid[i][j].bottom;
+                    if (edge === 'left' && i > 0) grid[i-1][j].right = grid[i][j].left;
+                }
+            } else if (event.button === 2) { // 右键
+                // 在这里添加标记 X 的逻辑
+            }
+
+            drawGrid();
+        }
+
+        function getClickedEdge(x, y) {
+            const margin = cellSize / 4;
+            if (y < margin) return 'top';
+            if (x > cellSize - margin) return 'right';
+            if (y > cellSize - margin) return 'bottom';
+            if (x < margin) return 'left';
+            return null;
+        }
+
+        canvas.addEventListener('mousedown', handleClick);
+        canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+
+        initializeGrid();
+        drawGrid();
+    </script>
+</body>
+</html>
