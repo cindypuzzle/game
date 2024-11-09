@@ -6,25 +6,65 @@
     <title><%= title %></title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
-            background-color: #f0f0f0;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            color: #333;
         }
         #game-container {
             text-align: center;
+            background-color: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            margin: 20px 0;
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 20px;
         }
         canvas {
-            border: 1px solid #000;
+            border: 2px solid #3498db;
+            border-radius: 10px;
             background-color: #fff;
         }
         #instructions {
             max-width: 600px;
             margin-top: 20px;
-            text-align: left;
+            background-color: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        }
+        h2 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        ul {
+            padding-left: 20px;
+        }
+        li {
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+        #reset-button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        #reset-button:hover {
+            background-color: #2980b9;
         }
     </style>
 </head>
@@ -32,6 +72,7 @@
     <div id="game-container">
         <h1><%= title %></h1>
         <canvas id="gameCanvas" width="400" height="400"></canvas>
+        <button id="reset-button">重置游戏</button>
     </div>
     <div id="instructions">
         <h2>游戏规则：</h2>
@@ -42,19 +83,29 @@
             <li>左键单击两点之间连接线段</li>
             <li>右键单击标记X</li>
             <li>按住Shift+单击可以为正方形着色</li>
+            <li>白色圆圈可以压在线上</li>
         </ul>
     </div>
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
-        const gridSize = 8;
+        const gridSize = 6; // 6x6网格
         const cellSize = canvas.width / gridSize;
 
         let grid = [];
         let circles = [];
 
         function initializeGrid() {
+            grid = [];
+            circles = [
+                {x: 0, y: 0}, {x: 1.5, y: 0.5}, {x: 5, y: 0},
+                {x: 0.5, y: 2}, {x: 2.5, y: 2}, {x: 4.5, y: 2},
+                {x: 2, y: 3}, {x: 5, y: 3},
+                {x: 0, y: 4}, {x: 3.5, y: 4.5},
+                {x: 1.5, y: 5.5}, {x: 4, y: 5}
+            ];
+
             for (let i = 0; i < gridSize; i++) {
                 grid[i] = [];
                 for (let j = 0; j < gridSize; j++) {
@@ -63,21 +114,9 @@
                         right: false,
                         bottom: false,
                         left: false,
-                        filled: false,
-                        hasCircle: false
+                        region: null
                     };
                 }
-            }
-
-            // 随机放置圆圈
-            for (let i = 0; i < 3; i++) {
-                let x, y;
-                do {
-                    x = Math.floor(Math.random() * gridSize);
-                    y = Math.floor(Math.random() * gridSize);
-                } while (grid[x][y].hasCircle);
-                grid[x][y].hasCircle = true;
-                circles.push({x, y});
             }
         }
 
@@ -86,6 +125,7 @@
 
             // 绘制网格线
             ctx.strokeStyle = '#ccc';
+            ctx.lineWidth = 1;
             for (let i = 0; i <= gridSize; i++) {
                 ctx.beginPath();
                 ctx.moveTo(i * cellSize, 0);
@@ -98,46 +138,36 @@
                 ctx.stroke();
             }
 
-            // 绘制线段和填充
+            // 绘制用户划分的区域
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 2;
             for (let i = 0; i < gridSize; i++) {
                 for (let j = 0; j < gridSize; j++) {
                     const cell = grid[i][j];
                     const x = i * cellSize;
                     const y = j * cellSize;
 
-                    if (cell.filled) {
-                        ctx.fillStyle = 'rgba(0, 0, 255, 0.2)';
-                        ctx.fillRect(x, y, cellSize, cellSize);
-                    }
-
-                    ctx.strokeStyle = '#000';
-                    ctx.beginPath();
                     if (cell.top) {
+                        ctx.beginPath();
                         ctx.moveTo(x, y);
                         ctx.lineTo(x + cellSize, y);
+                        ctx.stroke();
                     }
                     if (cell.right) {
+                        ctx.beginPath();
                         ctx.moveTo(x + cellSize, y);
                         ctx.lineTo(x + cellSize, y + cellSize);
+                        ctx.stroke();
                     }
-                    if (cell.bottom) {
-                        ctx.moveTo(x, y + cellSize);
-                        ctx.lineTo(x + cellSize, y + cellSize);
-                    }
-                    if (cell.left) {
-                        ctx.moveTo(x, y);
-                        ctx.lineTo(x, y + cellSize);
-                    }
-                    ctx.stroke();
                 }
             }
 
-            // 绘制圆圈
+            // 绘制白色圆圈
             ctx.fillStyle = '#fff';
             ctx.strokeStyle = '#000';
             circles.forEach(circle => {
                 ctx.beginPath();
-                ctx.arc(circle.x * cellSize + cellSize / 2, circle.y * cellSize + cellSize / 2, cellSize / 4, 0, Math.PI * 2);
+                ctx.arc(circle.x * cellSize, circle.y * cellSize, 5, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.stroke();
             });
@@ -151,22 +181,19 @@
             const i = Math.floor(x / cellSize);
             const j = Math.floor(y / cellSize);
 
-            if (event.shiftKey) {
-                grid[i][j].filled = !grid[i][j].filled;
-            } else if (event.button === 0) { // 左键
-                const edge = getClickedEdge(x % cellSize, y % cellSize);
-                if (edge) {
-                    grid[i][j][edge] = !grid[i][j][edge];
-                    if (edge === 'top' && j > 0) grid[i][j-1].bottom = grid[i][j].top;
-                    if (edge === 'right' && i < gridSize-1) grid[i+1][j].left = grid[i][j].right;
-                    if (edge === 'bottom' && j < gridSize-1) grid[i][j+1].top = grid[i][j].bottom;
-                    if (edge === 'left' && i > 0) grid[i-1][j].right = grid[i][j].left;
-                }
-            } else if (event.button === 2) { // 右键
-                // 在这里添加标记 X 的逻辑
+            const edge = getClickedEdge(x % cellSize, y % cellSize);
+            if (edge) {
+                grid[i][j][edge] = !grid[i][j][edge];
+                if (edge === 'right' && i < gridSize - 1) grid[i+1][j].left = grid[i][j].right;
+                if (edge === 'bottom' && j < gridSize - 1) grid[i][j+1].top = grid[i][j].bottom;
             }
 
             drawGrid();
+            
+            // 每次用户操作后检查解决方案
+            if (checkSolution()) {
+                alert("恭喜！您已经成功解决了这个谜题！");
+            }
         }
 
         function getClickedEdge(x, y) {
@@ -178,9 +205,85 @@
             return null;
         }
 
-        canvas.addEventListener('mousedown', handleClick);
-        canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+        function checkSolution() {
+            // 简单的解决方案检查
+            let regions = new Array(circles.length).fill().map(() => []);
+            
+            for (let i = 0; i < gridSize; i++) {
+                for (let j = 0; j < gridSize; j++) {
+                    let regionIndex = findRegion(i, j);
+                    if (regionIndex === -1) return false; // 有单元格不属于任何区域
+                    regions[regionIndex].push({x: i, y: j});
+                }
+            }
 
+            // 检查每个区域是否只有一个圆圈，并且是对称的
+            for (let i = 0; i < regions.length; i++) {
+                if (!checkRegionSymmetry(regions[i], circles[i])) return false;
+            }
+
+            return true;
+        }
+
+        function findRegion(x, y) {
+            for (let i = 0; i < circles.length; i++) {
+                if (isInRegion(x, y, circles[i])) return i;
+            }
+            return -1;
+        }
+
+        function isInRegion(x, y, circle) {
+            // 简单的检查：如果没有边界阻隔，则认为在同一区域
+            let cx = Math.floor(circle.x);
+            let cy = Math.floor(circle.y);
+            
+            // 向右检查
+            for (let i = Math.min(x, cx); i < Math.max(x, cx); i++) {
+                if (grid[i][y].right) return false;
+            }
+            // 向下检查
+            for (let j = Math.min(y, cy); j < Math.max(y, cy); j++) {
+                if (grid[x][j].bottom) return false;
+            }
+            return true;
+        }
+
+        function checkRegionSymmetry(region, circle) {
+            if (region.length === 0) return false;
+            for (let cell of region) {
+                let dx = cell.x - circle.x;
+                let dy = cell.y - circle.y;
+                let oppositeX = Math.round(circle.x - dx);
+                let oppositeY = Math.round(circle.y - dy);
+                if (!region.some(c => c.x === oppositeX && c.y === oppositeY)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        canvas.addEventListener('mousedown', handleClick);
+
+        // 修改重置按钮功能
+        const resetButton = document.getElementById('reset-button');
+        resetButton.addEventListener('click', () => {
+            initializeGrid();
+            drawGrid();
+        });
+
+        // 添加一个"检查解决方案"按钮
+        const checkButton = document.createElement('button');
+        checkButton.textContent = '检查解决方案';
+        checkButton.addEventListener('click', () => {
+            if (checkSolution()) {
+                alert("解决方案正确！");
+            } else {
+                alert("解决方案不正确，请继续尝试。");
+            }
+        });
+        document.getElementById('game-container').appendChild(checkButton);
+
+        // 初始化游戏
         initializeGrid();
         drawGrid();
     </script>
