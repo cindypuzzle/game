@@ -283,7 +283,7 @@
         </div>
         
         <div id="split-container">
-            <h2 class="split-title">拆分视图</h2>
+            <h2 class="split-title">拆分视</h2>
             <canvas id="splitCanvas" width="400" height="400"></canvas>
             <div class="submit-button-container">
                 <button id="submit-button">提交答案</button>
@@ -314,7 +314,7 @@
 
     <script>
         const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
         
         // 从服务器接收题目配置
         const currentPuzzle = <%- JSON.stringify(puzzle) %>;
@@ -528,7 +528,7 @@
         function splitPuzzle() {
             const splitCanvas = document.getElementById('splitCanvas');
             splitCanvas.style.display = 'block';
-            const splitCtx = splitCanvas.getContext('2d');
+            const splitCtx = splitCanvas.getContext('2d', { willReadFrequently: true });
 
             // 如果regions未定义，根据当前puzzle初始化
             if (!regions) {
@@ -555,9 +555,11 @@
             let rows = [];
             let regionColorPatterns = [];
             
+            console.log('开始收集原始行数据...');
+            // 从下往上收集行（y从大到小）
             for (let y = gridSize - 1; y >= 0; y--) {
                 let row = [];
-                let rowPattern = new Map(); // 记录这一行中每个颜色出现的次数
+                let rowPattern = new Map();
                 
                 for (let x = 0; x < gridSize; x++) {
                     const colorIndex = regions[x][y];
@@ -568,12 +570,16 @@
                         x: x,
                         y: y,
                         colorIndex: colorIndex,
-                        color: colorIndex !== undefined ? colors[colorIndex] : null
+                        color: colorIndex !== null ? colors[colorIndex] : null
                     });
                 }
                 
                 if (row.some(cell => cell.color !== null)) {
-                    rows.push(row);
+                    rows.push({
+                        data: row,
+                        correctNumber: rows.length + 1,  // 记录这一行的正确序号（从1开始）
+                        isNoise: false                   // 标记这不是干扰行
+                    });
                     regionColorPatterns.push(rowPattern);
                 }
             }
@@ -581,7 +587,6 @@
             // 生成干扰行
             const noiseRowCount = Math.ceil(rows.length * 0.2);
             for(let i = 0; i < noiseRowCount; i++) {
-                // 随机选择一个实行的颜色模式
                 const templatePattern = regionColorPatterns[Math.floor(Math.random() * regionColorPatterns.length)];
                 let noiseRow = new Array(gridSize).fill(null).map(() => ({
                     x: 0,
@@ -590,9 +595,7 @@
                     color: null
                 }));
                 
-                // 复制相同数量的每种颜色
                 templatePattern.forEach((count, colorIndex) => {
-                    // 在随机位置放置这种颜色
                     for(let j = 0; j < count; j++) {
                         let pos;
                         do {
@@ -604,15 +607,33 @@
                     }
                 });
                 
-                rows.push(noiseRow);
+                rows.push({
+                    data: noiseRow,
+                    correctNumber: null,  // 干扰行没有正确序号
+                    isNoise: true        // 标记这是干扰行
+                });
             }
 
-            // 随机打乱行的顺序
-            rows.sort(() => Math.random() - 0.5);
+            // 随机打乱行的顺序并记录打乱后的信息
+            const shuffledRows = rows.sort(() => Math.random() - 0.5);
+
+            // 输出调试信息
+            console.log('=== 打乱后的行顺序 ===');
+            shuffledRows.forEach((row, currentIndex) => {
+                console.log(`当前序号 ${currentIndex + 1}:`, {
+                    correctNumber: row.correctNumber,
+                    isNoise: row.isNoise,
+                    colorSequence: row.data.map(cell => cell.colorIndex)
+                });
+            });
+            console.log('==================');
+
+            // 保存行信息到全局变量（用于验证）
+            window.rowsInfo = shuffledRows;
 
             // 修改画布尺寸计算
             const totalWidth = numberWidth + (gridSize * cellSize) + rightPadding + (padding * 2);
-            const totalHeight = titleHeight + (rows.length * (rowHeight + rowGap)) - rowGap + (padding * 2);
+            const totalHeight = titleHeight + (shuffledRows.length * (rowHeight + rowGap)) - rowGap + (padding * 2);
             
             // 调整画布大小
             splitCanvas.width = totalWidth;
@@ -633,14 +654,16 @@
 
             // 修改绘制行的代码
             let currentY = titleHeight + padding;
-            rows.forEach((row, index) => {
-                // 记录每行的位置信息，增加右侧空间
+            shuffledRows.forEach((row, index) => {
+                // 记录每行的位置信息
                 rowPositions.push({
                     x: numberWidth + padding,
                     y: currentY,
                     width: gridSize * cellSize,
                     height: cellSize,
-                    rowIndex: index,
+                    currentIndex: index,           // 当前序号（0-based）
+                    correctNumber: row.correctNumber, // 正确序号（如果有）
+                    isNoise: row.isNoise,         // 是否是干扰行
                     selected: false,
                     selectionNumber: null
                 });
@@ -659,7 +682,7 @@
                 splitCtx.fillRect(currentX, currentY, gridSize * cellSize, cellSize);
 
                 // 绘制格子
-                row.forEach(cell => {
+                row.data.forEach(cell => {
                     if (cell.color !== null) {
                         splitCtx.fillStyle = cell.color;
                         splitCtx.fillRect(currentX, currentY, cellSize, cellSize);
@@ -679,7 +702,7 @@
             splitCtx.strokeRect(padding/2, padding/2, splitCanvas.width - padding, splitCanvas.height - padding);
         }
 
-        // 修改点击���件处理函数
+        // 修改点击件处理函数
         function handleSplitCanvasClick(e) {
             const rect = e.target.getBoundingClientRect();
             const scaleX = e.target.width / rect.width;
@@ -763,7 +786,7 @@
         // 修改重绘选中状态的函数
         function redrawWithSelections() {
             const splitCanvas = document.getElementById('splitCanvas');
-            const ctx = splitCanvas.getContext('2d');
+            const ctx = splitCanvas.getContext('2d', { willReadFrequently: true });
             
             // 保存当前的行数据
             const currentRows = rowPositions.map(rowInfo => {
@@ -779,7 +802,7 @@
                 };
             });
             
-            // 清除��有选中标记
+            // 清除有选中标记
             rowPositions.forEach(rowInfo => {
                 // 清除右侧区域
                 ctx.clearRect(
@@ -853,29 +876,60 @@
             const splitCanvas = document.getElementById('splitCanvas');
             splitCanvas.addEventListener('click', handleSplitCanvasClick);
             splitCanvas.addEventListener('dblclick', handleSplitCanvasDoubleClick);
+            
+            // 添加正确顺序的调试输出
+            if (window.correctRowOrder) {
+                console.log('=== 页面加载完成，当前正确顺序 ===');
+                window.correctRowOrder.forEach((row, index) => {
+                    console.log(`第 ${index + 1} 行:`, row.colorSequence);
+                });
+                console.log('================================');
+            }
         });
 
-        // 修改提交按钮的处理逻辑
+        // 在script标签中修改提交按钮的处理逻辑
         document.getElementById('submit-button').addEventListener('click', function() {
             const selectedRows = rowPositions.filter(row => row.selected);
-            const requiredRows = gridSize;
             
-            if (selectedRows.length !== requiredRows) {
-                showMessage(`请选择${requiredRows}行！当前已选择${selectedRows.length}行。`, 'error');
+            console.log('验证答案...');
+            console.log('用户选择的顺序:', selectedRows.map(row => ({
+                currentIndex: row.currentIndex,
+                selectionNumber: row.selectionNumber,
+                correctNumber: row.correctNumber,
+                isNoise: row.isNoise
+            })));
+
+            // 检查选择数量
+            if (selectedRows.length !== gridSize) {
+                showMessage(`请选择${gridSize}行！当前已选择${selectedRows.length}行。`, 'error');
                 return;
             }
 
             // 获取用户选择的顺序
-            const userOrder = rowPositions
-                .map(row => ({
-                    index: row.rowIndex,
-                    selectionNumber: row.selectionNumber
-                }))
+            const userSelection = selectedRows
                 .sort((a, b) => a.selectionNumber - b.selectionNumber)
-                .map(row => row.index);
+                .map(row => ({
+                    correctNumber: row.correctNumber,
+                    isNoise: row.isNoise
+                }));
 
-            // TODO: 这里可以添加验证答案的逻辑
-            showMessage('答案已提交！', 'info');
+            // 验证答案
+            let isCorrect = true;
+            for (let i = 0; i < gridSize; i++) {
+                const selection = userSelection[i];
+                // 检查是否选择了干扰行或序号不匹配
+                if (selection.isNoise || selection.correctNumber !== i + 1) {
+                    isCorrect = false;
+                    break;
+                }
+            }
+
+            if (isCorrect) {
+                showMessage('恭喜！答案正确！', 'info');
+                // TODO: 可以在这里添加过关逻辑
+            } else {
+                showMessage('答案不正确，请继续尝试！', 'error');
+            }
         });
 
         // 在script标签中添加消息提示的函数
