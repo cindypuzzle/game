@@ -703,12 +703,22 @@
                     y >= rowInfo.y && 
                     y <= rowInfo.y + rowInfo.height) {
                     
-                    console.log('Row double clicked:', rowInfo); // 添加调试信息
-                    
                     if (rowInfo.selected) {
+                        const removedNumber = rowInfo.selectionNumber;
                         rowInfo.selected = false;
                         rowInfo.selectionNumber = null;
-                        currentSelection = Math.max(1, currentSelection - 1);
+                        
+                        // 重新调整其他选中项的序号
+                        rowPositions.forEach(otherRow => {
+                            if (otherRow.selected && otherRow.selectionNumber > removedNumber) {
+                                otherRow.selectionNumber--;
+                            }
+                        });
+                        
+                        // 更新当前选择计数器
+                        currentSelection = Math.max(1, getMaxSelectionNumber() + 1);
+                        
+                        // 只重绘选中状态，不重新生成拆分视图
                         redrawWithSelections();
                     }
                     break;
@@ -716,11 +726,75 @@
             }
         }
 
+        // 添加获取最大选择序号的辅助函数
+        function getMaxSelectionNumber() {
+            let maxNum = 0;
+            rowPositions.forEach(row => {
+                if (row.selected && row.selectionNumber > maxNum) {
+                    maxNum = row.selectionNumber;
+                }
+            });
+            return maxNum;
+        }
+
         // 修改重绘选中状态的函数
         function redrawWithSelections() {
             const splitCanvas = document.getElementById('splitCanvas');
             const ctx = splitCanvas.getContext('2d');
             
+            // 保存当前的行数据
+            const currentRows = rowPositions.map(rowInfo => {
+                const imageData = ctx.getImageData(
+                    rowInfo.x, 
+                    rowInfo.y, 
+                    rowInfo.width, 
+                    rowInfo.height
+                );
+                return {
+                    rowInfo: rowInfo,
+                    imageData: imageData
+                };
+            });
+            
+            // 清除所有选中标记
+            rowPositions.forEach(rowInfo => {
+                // 清除右侧区域
+                ctx.clearRect(
+                    rowInfo.x + rowInfo.width, 
+                    rowInfo.y - 5, 
+                    60, // 确保足够宽以覆盖选择圆圈
+                    rowInfo.height + 10
+                );
+                
+                // 清除行的边框
+                ctx.clearRect(
+                    rowInfo.x - 3,
+                    rowInfo.y - 3,
+                    rowInfo.width + 6,
+                    rowInfo.height + 6
+                );
+            });
+            
+            // 恢复行的原始内容
+            currentRows.forEach(row => {
+                ctx.putImageData(
+                    row.imageData,
+                    row.rowInfo.x,
+                    row.rowInfo.y
+                );
+                
+                // 重绘基本边框
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(
+                    row.rowInfo.x,
+                    row.rowInfo.y,
+                    row.rowInfo.width,
+                    row.rowInfo.height
+                );
+            });
+            
+            // 重新绘制所有选中状态
             rowPositions.forEach(rowInfo => {
                 if (rowInfo.selected) {
                     // 绘制选中边框
@@ -729,7 +803,7 @@
                     ctx.strokeRect(rowInfo.x, rowInfo.y, rowInfo.width, rowInfo.height);
                     
                     // 绘制选择圆圈
-                    const circleX = rowInfo.x + rowInfo.width + 30; // 调整圆圈位置
+                    const circleX = rowInfo.x + rowInfo.width + 30;
                     const circleY = rowInfo.y + rowInfo.height/2;
                     
                     // 绘制圆圈背景
