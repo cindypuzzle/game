@@ -244,6 +244,27 @@
             background-color: #fff;
             box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
+
+        .selected-row {
+            outline: 3px solid #2ecc71;
+            position: relative;
+        }
+        
+        .row-number {
+            position: absolute;
+            right: -40px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #2ecc71;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -263,7 +284,6 @@
             <div class="button-group">
                 <button id="reset-button">重置游戏</button>
                 <button id="solve-button">解题</button>
-                <button id="split-button">拆分</button>
                 <button id="help-button" class="help-button">游戏规则</button>
             </div>
         </div>
@@ -276,11 +296,11 @@
             <h2>游戏规则</h2>
             <ul>
                 <li>将网格划分为不同区域（星系）</li>
-                <li>每个区域有且仅有1个白色圆圈</li>
+                <li>每个区��有且仅有1个白色圆圈</li>
                 <li>圆圈是其区域的中心对称点（旋转180°后形状、位置和方向相同）</li>
                 <li>左键单击两点之间连接线段</li>
                 <li>右键单击标记X</li>
-                <li>按住Shift+单击可以为正方形着色</li>
+                <li>按住Shift+单击可以为正方着色</li>
                 <li>白色圆圈可以压在线上</li>
             </ul>
         </div>
@@ -506,14 +526,33 @@
             regions = undefined;
             initializeGrid();
             drawGrid();
-            const splitCanvas = document.getElementById('splitCanvas');
-            splitCanvas.style.display = 'none';
+            // 重新初始化regions并执行拆分
+            regions = Array(gridSize).fill().map(() => Array(gridSize).fill(undefined));
+            circles.forEach((circle, index) => {
+                if (circle.cells) {
+                    circle.cells.forEach(cell => {
+                        regions[cell.x][cell.y] = index;
+                    });
+                }
+            });
+            splitPuzzle();
         });
 
         // 始化变量
         let regions;
         initializeGrid();
         drawGrid();
+
+        // 初始化regions并执行拆分
+        regions = Array(gridSize).fill().map(() => Array(gridSize).fill(undefined));
+        circles.forEach((circle, index) => {
+            if (circle.cells) {
+                circle.cells.forEach(cell => {
+                    regions[cell.x][cell.y] = index;
+                });
+            }
+        });
+        splitPuzzle();
 
         // 修改切换题目的函数
         function changePuzzle(puzzleId) {
@@ -532,7 +571,7 @@
             modal.style.display = 'none';
         }
 
-        // 点击弹窗外部关闭弹窗
+        // ���击弹窗外部关闭弹窗
         window.addEventListener('click', (event) => {
             if (event.target === modal) {
                 closeModal();
@@ -551,6 +590,18 @@
             const splitCanvas = document.getElementById('splitCanvas');
             splitCanvas.style.display = 'block';
             const splitCtx = splitCanvas.getContext('2d');
+
+            // 如果regions未定义，根据当前puzzle初始化
+            if (!regions) {
+                regions = Array(gridSize).fill().map(() => Array(gridSize).fill(undefined));
+                circles.forEach((circle, index) => {
+                    if (circle.cells) {
+                        circle.cells.forEach(cell => {
+                            regions[cell.x][cell.y] = index;
+                        });
+                    }
+                });
+            }
 
             // 设置参数
             const rowGap = 20;  // 行之间的间隔
@@ -636,9 +687,23 @@
             splitCtx.textAlign = 'left';
             splitCtx.fillText('* 横条的顺序已随机打乱，请尝试还原正确顺序', padding, padding + 10);
 
+            // 清空行位置信息
+            rowPositions = [];
+
             // 在下方画布上绘制打乱后的行
             let currentY = titleHeight + padding;
             rows.forEach((row, index) => {
+                // 记录每行的位置信息
+                rowPositions.push({
+                    x: numberWidth + padding,
+                    y: currentY,
+                    width: gridSize * cellSize,
+                    height: cellSize,
+                    rowIndex: index,
+                    selected: false,
+                    selectionNumber: null
+                });
+
                 // 绘制序号
                 splitCtx.fillStyle = '#000';
                 splitCtx.font = 'bold 16px Arial';
@@ -681,14 +746,115 @@
             splitCtx.strokeRect(padding/2, padding/2, splitCanvas.width - padding, splitCanvas.height - padding);
         }
 
-        // 添加拆分按钮事件监听
-        const splitButton = document.getElementById('split-button');
-        splitButton.addEventListener('click', () => {
-            if (regions) {
-                splitPuzzle();
-            } else {
-                alert('请先点击解题按钮查看完整解答！');
+        // 修改点击事件处理函数
+        function handleSplitCanvasClick(e) {
+            const rect = e.target.getBoundingClientRect();
+            const scaleX = e.target.width / rect.width;    // 计算画布缩放比例
+            const scaleY = e.target.height / rect.height;
+            
+            const x = (e.clientX - rect.left) * scaleX;   // 应用缩放比例
+            const y = (e.clientY - rect.top) * scaleY;
+            
+            for (let rowInfo of rowPositions) {
+                if (x >= rowInfo.x && 
+                    x <= rowInfo.x + rowInfo.width && 
+                    y >= rowInfo.y && 
+                    y <= rowInfo.y + rowInfo.height) {
+                    
+                    console.log('Row clicked:', rowInfo); // 添加调试信息
+                    
+                    if (!rowInfo.selected) {
+                        rowInfo.selected = true;
+                        rowInfo.selectionNumber = currentSelection++;
+                        redrawWithSelections();
+                    }
+                    break;
+                }
             }
+        }
+
+        // 修改双击事件处理函数
+        function handleSplitCanvasDoubleClick(e) {
+            const rect = e.target.getBoundingClientRect();
+            const scaleX = e.target.width / rect.width;
+            const scaleY = e.target.height / rect.height;
+            
+            const x = (e.clientX - rect.left) * scaleX;
+            const y = (e.clientY - rect.top) * scaleY;
+            
+            for (let rowInfo of rowPositions) {
+                if (x >= rowInfo.x && 
+                    x <= rowInfo.x + rowInfo.width && 
+                    y >= rowInfo.y && 
+                    y <= rowInfo.y + rowInfo.height) {
+                    
+                    console.log('Row double clicked:', rowInfo); // 添加调试信息
+                    
+                    if (rowInfo.selected) {
+                        rowInfo.selected = false;
+                        rowInfo.selectionNumber = null;
+                        currentSelection = Math.max(1, currentSelection - 1);
+                        redrawWithSelections();
+                    }
+                    break;
+                }
+            }
+        }
+
+        // 修改重绘选中状态的函数
+        function redrawWithSelections() {
+            console.log('Redrawing with selections:', rowPositions);
+            
+            const splitCanvas = document.getElementById('splitCanvas');
+            const ctx = splitCanvas.getContext('2d');
+            
+            // 只清除选中效果的区域（右侧区域）
+            rowPositions.forEach(rowInfo => {
+                // 清除右侧可能存在的选中标记
+                ctx.clearRect(
+                    rowInfo.x + rowInfo.width, // 从行的右边开始
+                    rowInfo.y - 20, // 稍微扩大清除范围
+                    50, // 清除足够宽的区域以覆盖圆圈
+                    rowInfo.height + 40 // 稍微扩大清除范围
+                );
+            });
+            
+            // 绘制选中效果
+            rowPositions.forEach(rowInfo => {
+                if (rowInfo.selected) {
+                    // 绘制选中边框
+                    ctx.strokeStyle = '#2ecc71';
+                    ctx.lineWidth = 3;
+                    ctx.strokeRect(rowInfo.x, rowInfo.y, rowInfo.width, rowInfo.height);
+                    
+                    // 绘制序号圆圈和文字
+                    const circleX = rowInfo.x + rowInfo.width + 20;
+                    const circleY = rowInfo.y + rowInfo.height/2;
+                    
+                    // 绘制圆圈
+                    ctx.fillStyle = '#2ecc71';
+                    ctx.beginPath();
+                    ctx.arc(circleX, circleY, 15, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // 绘制序号
+                    ctx.fillStyle = 'white';
+                    ctx.font = 'bold 16px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(rowInfo.selectionNumber.toString(), circleX, circleY);
+                }
+            });
+        }
+
+        // 初始化变量
+        let currentSelection = 1;
+
+        // 添加事件监听
+        document.addEventListener('DOMContentLoaded', function() {
+            const splitCanvas = document.getElementById('splitCanvas');
+            splitCanvas.addEventListener('click', handleSplitCanvasClick);
+            splitCanvas.addEventListener('dblclick', handleSplitCanvasDoubleClick);
         });
     </script>
 </body>
