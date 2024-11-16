@@ -12,100 +12,294 @@
             align-items: center;
             min-height: 100vh;
             margin: 0;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            color: #333;
+            background: linear-gradient(120deg, #a1c4fd 0%, #c2e9fb 100%);
+            color: #2c3e50;
         }
+
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+
         #game-container {
             text-align: center;
-            background-color: white;
-            border-radius: 15px;
-            padding: 20px;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.1);
             margin: 20px 0;
+            transition: transform 0.3s ease;
         }
+
+        #game-container:hover {
+            transform: translateY(-5px);
+        }
+
         h1 {
             color: #2c3e50;
-            margin-bottom: 20px;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
         }
-        canvas {
-            border: 2px solid #3498db;
-            border-radius: 10px;
-            background-color: #fff;
+
+        #puzzle-select {
+            margin-bottom: 25px;
         }
-        #instructions {
-            max-width: 600px;
-            margin-top: 20px;
-            background-color: white;
-            border-radius: 15px;
-            padding: 20px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
-        }
-        h2 {
-            color: #2c3e50;
-            border-bottom: 2px solid #3498db;
-            padding-bottom: 10px;
-        }
-        ul {
-            padding-left: 20px;
-        }
-        li {
-            margin-bottom: 10px;
-            line-height: 1.5;
-        }
-        #reset-button {
-            margin-top: 20px;
+
+        select {
             padding: 10px 20px;
             font-size: 16px;
+            border: 2px solid #3498db;
+            border-radius: 10px;
+            background-color: white;
+            color: #2c3e50;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        select:hover {
+            border-color: #2980b9;
+            background-color: #f8f9fa;
+        }
+
+        canvas {
+            border: 3px solid #3498db;
+            border-radius: 15px;
+            background-color: #fff;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin: 20px 0;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 12px 25px;
+            font-size: 16px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        #reset-button {
             background-color: #3498db;
             color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
         }
+
         #reset-button:hover {
             background-color: #2980b9;
+            transform: translateY(-2px);
+        }
+
+        #check-button {
+            background-color: #2ecc71;
+            color: white;
+        }
+
+        #check-button:hover {
+            background-color: #27ae60;
+            transform: translateY(-2px);
+        }
+
+        #instructions {
+            max-width: 800px;
+            margin: 30px auto;
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+
+        ul {
+            padding-left: 25px;
+            list-style-type: none;
+        }
+
+        li {
+            margin-bottom: 15px;
+            line-height: 1.6;
+            position: relative;
+            padding-left: 25px;
+        }
+
+        li:before {
+            content: "•";
+            color: #3498db;
+            font-size: 1.5em;
+            position: absolute;
+            left: 0;
+            top: -2px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 10px;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+            
+            canvas {
+                max-width: 100%;
+                height: auto;
+            }
+            
+            .button-group {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+
+        /* 添加弹窗相关样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+
+        .modal-content {
+            position: relative;
+            background-color: #fff;
+            margin: 15vh auto;
+            padding: 30px;
+            width: 80%;
+            max-width: 600px;
+            border-radius: 20px;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+            animation: modalSlideIn 0.3s ease;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                transform: translateY(-100px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .close-button {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+            transition: color 0.3s ease;
+        }
+
+        .close-button:hover {
+            color: #2c3e50;
+        }
+
+        .help-button {
+            background-color: #9b59b6;
+            color: white;
+        }
+
+        .help-button:hover {
+            background-color: #8e44ad;
+            transform: translateY(-2px);
+        }
+
+        #split-button {
+            background-color: #e67e22;
+            color: white;
+        }
+
+        #split-button:hover {
+            background-color: #d35400;
+            transform: translateY(-2px);
+        }
+
+        #splitCanvas {
+            margin-top: 20px;
+            border: 3px solid #e67e22;
+            border-radius: 15px;
+            background-color: #fff;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
     </style>
 </head>
 <body>
-    <div id="game-container">
-        <h1><%= title %></h1>
-        <canvas id="gameCanvas" width="400" height="400"></canvas>
-        <button id="reset-button">重置游戏</button>
+    <div class="container">
+        <div id="game-container">
+            <h1><%= title %></h1>
+            <div id="puzzle-select">
+                <label for="puzzle-id">选择关卡：</label>
+                <select id="puzzle-id" onchange="changePuzzle(this.value)">
+                    <% for(let i = 1; i <= Object.keys(puzzle).length; i++) { %>
+                        <option value="<%= i %>" <%= puzzleId == i ? 'selected' : '' %>>第 <%= i %> 关</option>
+                    <% } %>
+                </select>
+            </div>
+            <canvas id="gameCanvas" width="400" height="400"></canvas>
+            <canvas id="splitCanvas" width="400" height="400" style="display: none;"></canvas>
+            <div class="button-group">
+                <button id="reset-button">重置游戏</button>
+                <button id="solve-button">解题</button>
+                <button id="split-button">拆分</button>
+                <button id="help-button" class="help-button">游戏规则</button>
+            </div>
+        </div>
     </div>
-    <div id="instructions">
-        <h2>游戏规则：</h2>
-        <ul>
-            <li>将网格划分为不同区域（星系）</li>
-            <li>每个区域有且仅有1个白色圆圈</li>
-            <li>圆圈是其区域的中心对称点（旋转180°后形状、位置和方向相同）</li>
-            <li>左键单击两点之间连接线段</li>
-            <li>右键单击标记X</li>
-            <li>按住Shift+单击可以为正方形着色</li>
-            <li>白色圆圈可以压在线上</li>
-        </ul>
+
+    <!-- 游戏规则弹窗 -->
+    <div id="rules-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" onclick="closeModal()">&times;</span>
+            <h2>游戏规则</h2>
+            <ul>
+                <li>将网格划分为不同区域（星系）</li>
+                <li>每个区域有且仅有1个白色圆圈</li>
+                <li>圆圈是其区域的中心对称点（旋转180°后形状、位置和方向相同）</li>
+                <li>左键单击两点之间连接线段</li>
+                <li>右键单击标记X</li>
+                <li>按住Shift+单击可以为正方形着色</li>
+                <li>白色圆圈可以压在线上</li>
+            </ul>
+        </div>
     </div>
+
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
-
-        const gridSize = 6; // 6x6网格
+        
+        // 从服务器接收题目配置
+        const currentPuzzle = <%- JSON.stringify(puzzle) %>;
+        const gridSize = currentPuzzle.gridSize;
         const cellSize = canvas.width / gridSize;
-
+        
         let grid = [];
-        let circles = [];
+        let circles = currentPuzzle.circles;
 
         function initializeGrid() {
             grid = [];
-            circles = [
-                {x: 0, y: 0}, {x: 1.5, y: 0.5}, {x: 5, y: 0},
-                {x: 0.5, y: 2}, {x: 2.5, y: 2}, {x: 4.5, y: 2},
-                {x: 2, y: 3}, {x: 5, y: 3},
-                {x: 0, y: 4}, {x: 3.5, y: 4.5},
-                {x: 1.5, y: 5.5}, {x: 4, y: 5}
-            ];
-
             for (let i = 0; i < gridSize; i++) {
                 grid[i] = [];
                 for (let j = 0; j < gridSize; j++) {
@@ -120,8 +314,39 @@
             }
         }
 
+        // 修改颜色数组，使用高对比度的颜色
+        const colors = [
+            'rgba(255, 107, 129, 0.5)',    // 鲜粉红
+            'rgba(83, 166, 250, 0.5)',     // 亮蓝色
+            'rgba(255, 165, 48, 0.5)',     // 明橙色
+            'rgba(131, 232, 175, 0.5)',    // 薄荷绿
+            'rgba(190, 75, 219, 0.5)',     // 亮紫色
+            'rgba(255, 198, 41, 0.5)',     // 金黄色
+            'rgba(86, 204, 242, 0.5)',     // 天蓝色
+            'rgba(255, 89, 94, 0.5)',      // 珊瑚红
+            'rgba(126, 217, 87, 0.5)',     // 青柠绿
+            'rgba(255, 145, 48, 0.5)',     // 杏橙色
+            'rgba(112, 161, 255, 0.5)',    // 皇家蓝
+            'rgba(255, 116, 173, 0.5)'     // 玫瑰粉
+        ];
+
+        // 修改绘制函数，添加填充颜色
         function drawGrid() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 先绘制区域填充
+            if (regions) {
+                for (let i = 0; i < gridSize; i++) {
+                    for (let j = 0; j < gridSize; j++) {
+                        if (regions[i][j] !== undefined) {
+                            const x = i * cellSize;
+                            const y = canvas.height - (j + 1) * cellSize;
+                            ctx.fillStyle = colors[regions[i][j]];
+                            ctx.fillRect(x, y, cellSize, cellSize);
+                        }
+                    }
+                }
+            }
 
             // 绘制网格线
             ctx.strokeStyle = '#ccc';
@@ -138,36 +363,14 @@
                 ctx.stroke();
             }
 
-            // 绘制用户划分的区域
-            ctx.strokeStyle = '#000';
-            ctx.lineWidth = 2;
-            for (let i = 0; i < gridSize; i++) {
-                for (let j = 0; j < gridSize; j++) {
-                    const cell = grid[i][j];
-                    const x = i * cellSize;
-                    const y = j * cellSize;
-
-                    if (cell.top) {
-                        ctx.beginPath();
-                        ctx.moveTo(x, y);
-                        ctx.lineTo(x + cellSize, y);
-                        ctx.stroke();
-                    }
-                    if (cell.right) {
-                        ctx.beginPath();
-                        ctx.moveTo(x + cellSize, y);
-                        ctx.lineTo(x + cellSize, y + cellSize);
-                        ctx.stroke();
-                    }
-                }
-            }
-
-            // 绘制白色圆圈
-            ctx.fillStyle = '#fff';
+            // 绘制黑色圆点
+            ctx.fillStyle = '#000';
             ctx.strokeStyle = '#000';
             circles.forEach(circle => {
                 ctx.beginPath();
-                ctx.arc(circle.x * cellSize, circle.y * cellSize, 5, 0, Math.PI * 2);
+                const x = circle.x * cellSize;
+                const y = canvas.height - circle.y * cellSize;
+                ctx.arc(x, y, 5, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.stroke();
             });
@@ -264,28 +467,229 @@
 
         canvas.addEventListener('mousedown', handleClick);
 
-        // 修改重置按钮功能
+        // 修改解题函数
+        function solve() {
+            // 每次解题前清除之前的区域
+            regions = undefined;
+            
+            // 重新初始化regions数组
+            regions = Array(gridSize).fill().map(() => Array(gridSize).fill(undefined));
+            
+            // 直接使用配置中的答案
+            circles.forEach((circle, index) => {
+                // 确保circle.cells存在
+                if (circle.cells) {
+                    circle.cells.forEach(cell => {
+                        regions[cell.x][cell.y] = index;
+                    });
+                }
+            });
+            
+            // 重新绘制整个网
+            drawGrid();
+        }
+
+        // 辅助函数：计算两点之间的距离
+        function distance(x1, y1, x2, y2) {
+            const dx = x1 - x2;
+            const dy = y1 - y2;
+            return Math.sqrt(dx * dx + dy * dy);
+        }
+
+        // 替换检查按钮为解题按钮
+        const solveButton = document.getElementById('solve-button');
+        solveButton.addEventListener('click', solve);
+
+        // 修改重置按钮功能，同时隐藏拆分结果
         const resetButton = document.getElementById('reset-button');
         resetButton.addEventListener('click', () => {
+            regions = undefined;
             initializeGrid();
             drawGrid();
+            const splitCanvas = document.getElementById('splitCanvas');
+            splitCanvas.style.display = 'none';
         });
 
-        // 添加一个"检查解决方案"按钮
-        const checkButton = document.createElement('button');
-        checkButton.textContent = '检查解决方案';
-        checkButton.addEventListener('click', () => {
-            if (checkSolution()) {
-                alert("解决方案正确！");
-            } else {
-                alert("解决方案不正确，请继续尝试。");
-            }
-        });
-        document.getElementById('game-container').appendChild(checkButton);
-
-        // 初始化游戏
+        // 始化变量
+        let regions;
         initializeGrid();
         drawGrid();
+
+        // 修改切换题目的函数
+        function changePuzzle(puzzleId) {
+            window.location.href = `/game/spiral-galaxy?id=${puzzleId}`;
+        }
+
+        // 添加弹窗相关功能
+        const modal = document.getElementById('rules-modal');
+        const helpButton = document.getElementById('help-button');
+
+        helpButton.addEventListener('click', () => {
+            modal.style.display = 'block';
+        });
+
+        function closeModal() {
+            modal.style.display = 'none';
+        }
+
+        // 点击弹窗外部关闭弹窗
+        window.addEventListener('click', (event) => {
+            if (event.target === modal) {
+                closeModal();
+            }
+        });
+
+        // ESC键关闭弹窗
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                closeModal();
+            }
+        });
+
+        // 修改拆分功能
+        function splitPuzzle() {
+            const splitCanvas = document.getElementById('splitCanvas');
+            splitCanvas.style.display = 'block';
+            const splitCtx = splitCanvas.getContext('2d');
+
+            // 设置参数
+            const rowGap = 20;  // 行之间的间隔
+            const numberWidth = 40;  // 序号区域的度
+            const rowHeight = cellSize;  // 每行的高度
+            const padding = 20;  // 画布四周的内边距
+            const titleHeight = 40;  // 标题区域高度
+
+            // 收集所有行和每个区域的颜色使用情况
+            let rows = [];
+            let regionColorPatterns = [];
+            
+            for (let y = gridSize - 1; y >= 0; y--) {
+                let row = [];
+                let rowPattern = new Map(); // 记录这一行中每个颜色出现的次数
+                
+                for (let x = 0; x < gridSize; x++) {
+                    const colorIndex = regions[x][y];
+                    if (colorIndex !== undefined) {
+                        rowPattern.set(colorIndex, (rowPattern.get(colorIndex) || 0) + 1);
+                    }
+                    row.push({
+                        x: x,
+                        y: y,
+                        colorIndex: colorIndex,
+                        color: colorIndex !== undefined ? colors[colorIndex] : null
+                    });
+                }
+                
+                if (row.some(cell => cell.color !== null)) {
+                    rows.push(row);
+                    regionColorPatterns.push(rowPattern);
+                }
+            }
+
+            // 生成干扰行
+            const noiseRowCount = Math.ceil(rows.length * 0.2);
+            for(let i = 0; i < noiseRowCount; i++) {
+                // 随机选择一个真实行的颜色模式
+                const templatePattern = regionColorPatterns[Math.floor(Math.random() * regionColorPatterns.length)];
+                let noiseRow = new Array(gridSize).fill(null).map(() => ({
+                    x: 0,
+                    y: -1,
+                    colorIndex: undefined,
+                    color: null
+                }));
+                
+                // 复制相同数量的每种颜色
+                templatePattern.forEach((count, colorIndex) => {
+                    // 在随机位置放置这种颜色
+                    for(let j = 0; j < count; j++) {
+                        let pos;
+                        do {
+                            pos = Math.floor(Math.random() * gridSize);
+                        } while (noiseRow[pos].colorIndex !== undefined);
+                        
+                        noiseRow[pos].colorIndex = colorIndex;
+                        noiseRow[pos].color = colors[colorIndex];
+                    }
+                });
+                
+                rows.push(noiseRow);
+            }
+
+            // 随机打乱行的顺序
+            rows.sort(() => Math.random() - 0.5);
+
+            // 计算画布尺寸
+            const totalWidth = numberWidth + (gridSize * cellSize) + (padding * 2);
+            const totalHeight = titleHeight + (rows.length * (rowHeight + rowGap)) - rowGap + (padding * 2);
+            
+            // 调整画布大小
+            splitCanvas.width = totalWidth;
+            splitCanvas.height = totalHeight;
+
+            // 设置背景色
+            splitCtx.fillStyle = '#fff';
+            splitCtx.fillRect(0, 0, splitCanvas.width, splitCanvas.height);
+
+            // 添加标题
+            splitCtx.fillStyle = '#666';
+            splitCtx.font = 'bold 16px Arial';
+            splitCtx.textAlign = 'left';
+            splitCtx.fillText('* 横条的顺序已随机打乱，请尝试还原正确顺序', padding, padding + 10);
+
+            // 在下方画布上绘制打乱后的行
+            let currentY = titleHeight + padding;
+            rows.forEach((row, index) => {
+                // 绘制序号
+                splitCtx.fillStyle = '#000';
+                splitCtx.font = 'bold 16px Arial';
+                splitCtx.textAlign = 'right';
+                splitCtx.textBaseline = 'middle';
+                splitCtx.fillText((index + 1).toString(), numberWidth + padding - 10, currentY + rowHeight/2);
+
+                let currentX = numberWidth + padding;
+                
+                // 绘制整行背景
+                splitCtx.fillStyle = '#f8f9fa';
+                splitCtx.fillRect(currentX, currentY, gridSize * cellSize, cellSize);
+
+                // 绘制格子
+                row.forEach(cell => {
+                    if (cell.color !== null) {
+                        // 填充颜色
+                        splitCtx.fillStyle = cell.color;
+                        splitCtx.fillRect(currentX, currentY, cellSize, cellSize);
+                    }
+                    // 绘制边框
+                    splitCtx.strokeStyle = '#000';
+                    splitCtx.lineWidth = 1;
+                    splitCtx.strokeRect(currentX, currentY, cellSize, cellSize);
+                    
+                    currentX += cellSize;
+                });
+
+                // 绘制行边框
+                splitCtx.strokeStyle = '#666';
+                splitCtx.lineWidth = 2;
+                splitCtx.strokeRect(numberWidth + padding, currentY, gridSize * cellSize, cellSize);
+
+                currentY += rowHeight + rowGap;
+            });
+
+            // 绘制整体边框
+            splitCtx.strokeStyle = '#3498db';
+            splitCtx.lineWidth = 3;
+            splitCtx.strokeRect(padding/2, padding/2, splitCanvas.width - padding, splitCanvas.height - padding);
+        }
+
+        // 添加拆分按钮事件监听
+        const splitButton = document.getElementById('split-button');
+        splitButton.addEventListener('click', () => {
+            if (regions) {
+                splitPuzzle();
+            } else {
+                alert('请先点击解题按钮查看完整解答！');
+            }
+        });
     </script>
 </body>
 </html>
