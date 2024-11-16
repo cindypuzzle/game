@@ -201,7 +201,6 @@
             </div>
             <div class="button-group">
                 <button id="reset-button">重置游戏</button>
-                <button id="solve-button">解题</button>
                 <button id="help-button" class="help-button">游戏规则</button>
             </div>
         </div>
@@ -319,38 +318,6 @@
             });
         }
 
-        function handleClick(event) {
-            const rect = canvas.getBoundingClientRect();
-            const x = event.clientX - rect.left;
-            const y = event.clientY - rect.top;
-
-            const i = Math.floor(x / cellSize);
-            const j = Math.floor(y / cellSize);
-
-            const edge = getClickedEdge(x % cellSize, y % cellSize);
-            if (edge) {
-                grid[i][j][edge] = !grid[i][j][edge];
-                if (edge === 'right' && i < gridSize - 1) grid[i+1][j].left = grid[i][j].right;
-                if (edge === 'bottom' && j < gridSize - 1) grid[i][j+1].top = grid[i][j].bottom;
-            }
-
-            drawGrid();
-            
-            // 每次用户操作后检查解决方案
-            if (checkSolution()) {
-                alert("恭喜！您已经成功解决了这个谜题！");
-            }
-        }
-
-        function getClickedEdge(x, y) {
-            const margin = cellSize / 4;
-            if (y < margin) return 'top';
-            if (x > cellSize - margin) return 'right';
-            if (y > cellSize - margin) return 'bottom';
-            if (x < margin) return 'left';
-            return null;
-        }
-
         function checkSolution() {
             // 简单的解决方案检查
             let regions = new Array(circles.length).fill().map(() => []);
@@ -407,41 +374,6 @@
             }
             return true;
         }
-
-        canvas.addEventListener('mousedown', handleClick);
-
-        // 修改解题函数
-        function solve() {
-            // 每次解题前清除之前的区域
-            regions = undefined;
-            
-            // 重新初始化regions数组
-            regions = Array(gridSize).fill().map(() => Array(gridSize).fill(undefined));
-            
-            // 直接使用配置中的答案
-            circles.forEach((circle, index) => {
-                // 确保circle.cells存在
-                if (circle.cells) {
-                    circle.cells.forEach(cell => {
-                        regions[cell.x][cell.y] = index;
-                    });
-                }
-            });
-            
-            // 重新绘制整个网
-            drawGrid();
-        }
-
-        // 辅助函数：计算两点之间的距离
-        function distance(x1, y1, x2, y2) {
-            const dx = x1 - x2;
-            const dy = y1 - y2;
-            return Math.sqrt(dx * dx + dy * dy);
-        }
-
-        // 替换检查按钮为解题按钮
-        const solveButton = document.getElementById('solve-button');
-        solveButton.addEventListener('click', solve);
 
         // 修改重置按钮功能，同时隐藏拆分结果
         const resetButton = document.getElementById('reset-button');
@@ -657,7 +589,7 @@
                 currentY += rowHeight + rowGap;
             });
 
-            // 绘制整体边框
+            // 绘制整体框
             splitCtx.strokeStyle = '#3498db';
             splitCtx.lineWidth = 3;
             splitCtx.strokeRect(padding/2, padding/2, splitCanvas.width - padding, splitCanvas.height - padding);
