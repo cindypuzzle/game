@@ -180,6 +180,32 @@
             border-radius: 50%;
             box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
         }
+
+        .submit-button-container {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        #submit-button {
+            background: #2ecc71;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        #submit-button:hover {
+            background: #27ae60;
+        }
+
+        #submit-button:active {
+            transform: translateY(1px);
+        }
     </style>
 </head>
 <body>
@@ -208,6 +234,9 @@
         <div id="split-container">
             <h2 class="split-title">拆分视图</h2>
             <canvas id="splitCanvas" width="400" height="400"></canvas>
+            <div class="submit-button-container">
+                <button id="submit-button">提交答案</button>
+            </div>
         </div>
     </div>
 
@@ -272,7 +301,7 @@
             'rgba(255, 116, 173, 0.5)'     // 玫瑰粉
         ];
 
-        // 修改绘制函数，添加填充颜色
+        // 修改绘制函数，添加填颜色
         function drawGrid() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -346,7 +375,7 @@
         }
 
         function isInRegion(x, y, circle) {
-            // 简单的检查：如果没有边界阻隔，则认为在同一区域
+            // 简单的检查：如果没有界阻隔，则认为在同一区域
             let cx = Math.floor(circle.x);
             let cy = Math.floor(circle.y);
             
@@ -460,7 +489,7 @@
 
             // 修改参数
             const rowGap = 20;  // 行间距
-            const numberWidth = 40;  // 序号区域宽度
+            const numberWidth = 40;  // 序号区域度
             const rowHeight = cellSize;  // 行高
             const padding = 20;  // 内边距
             const titleHeight = 40;  // 标题高度
@@ -497,7 +526,7 @@
             // 生成干扰行
             const noiseRowCount = Math.ceil(rows.length * 0.2);
             for(let i = 0; i < noiseRowCount; i++) {
-                // 随机选择一个真实行的颜色模式
+                // 随机选择一个实行的颜色模式
                 const templatePattern = regionColorPatterns[Math.floor(Math.random() * regionColorPatterns.length)];
                 let noiseRow = new Array(gridSize).fill(null).map(() => ({
                     x: 0,
@@ -611,6 +640,13 @@
                     y <= rowInfo.y + rowInfo.height) {
                     
                     if (!rowInfo.selected) {
+                        // 检查当前选择的行数是否已经达到gridSize
+                        const selectedCount = rowPositions.filter(row => row.selected).length;
+                        if (selectedCount >= gridSize) {
+                            alert(`最多只能选择${gridSize}行！请先取消一些选择。`);
+                            return;
+                        }
+                        
                         rowInfo.selected = true;
                         rowInfo.selectionNumber = currentSelection++;
                         redrawWithSelections();
@@ -762,6 +798,32 @@
             const splitCanvas = document.getElementById('splitCanvas');
             splitCanvas.addEventListener('click', handleSplitCanvasClick);
             splitCanvas.addEventListener('dblclick', handleSplitCanvasDoubleClick);
+        });
+
+        // 修改提交按钮的处理逻辑
+        document.getElementById('submit-button').addEventListener('click', function() {
+            // 检查是否所有行都已选择
+            const selectedRows = rowPositions.filter(row => row.selected);
+            
+            // 使用当前关卡的gridSize作为所需行数
+            const requiredRows = gridSize;
+            
+            if (selectedRows.length !== requiredRows) {
+                alert(`请选择${requiredRows}行！当前已选择${selectedRows.length}行。`);
+                return;
+            }
+
+            // 获取用户选择的顺序
+            const userOrder = rowPositions
+                .map(row => ({
+                    index: row.rowIndex,
+                    selectionNumber: row.selectionNumber
+                }))
+                .sort((a, b) => a.selectionNumber - b.selectionNumber)
+                .map(row => row.index);
+
+            // TODO: 这里可以添加验证答案的逻辑
+            alert('答案已提交！');
         });
     </script>
 </body>
