@@ -15,6 +15,12 @@ document.addEventListener('DOMContentLoaded', () => {
     let attempts = 0;
     let highScore = localStorage.getItem('magicRingsHighScore') || 0;
 
+    let timerInterval;
+    let startTimeStamp;  // 使用时间戳来计算精确时间
+    let timerElement;
+
+    timerElement = document.getElementById('timer');
+
     function createRings() {
         console.log('Creating rings');
         ringsContainer.innerHTML = '';
@@ -41,12 +47,15 @@ document.addEventListener('DOMContentLoaded', () => {
         startTime = new Date();
         attempts = 0;
         updateScoreDisplay();
+        
+        // 启动计时器
+        startTimer();
     }
 
     function generateValidRings() {
         const allRings = [];
         let chainedRings = null;
-        let targetSum = Math.floor(Math.random() * 31) + 40; // 生成40到70之间的随机目标和
+        let targetSum = Math.floor(Math.random() * 51) + 150; // 生成150-200之间的随机目标和
 
         console.log('Target sum:', targetSum);
 
@@ -83,7 +92,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // 随机修改一些数字，但保持首尾相连的特性
             for (let j = 0; j < 8; j++) {
                 if (j !== 0 && j !== 4 && j !== 5 && j !== 9) {
-                    newRing[j] = Math.floor(Math.random() * 10);
+                    newRing[j] = Math.floor(Math.random() * 21) + 10;
                 }
             }
             
@@ -129,18 +138,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
         for (let i = 0; i < 10; i++) {
             if (i === 9) {
+                if (remainingSum < 10 || remainingSum > 30) {
+                    return generateRingNumbers(targetSum);
+                }
                 numbers.push(remainingSum);
             } else {
-                const maxNumber = Math.min(9, remainingSum - (9 - i));
-                const minNumber = Math.max(0, remainingSum - (9 * (9 - i)));
+                const maxNumber = Math.min(30, remainingSum - (10 * (9 - i)));
+                const minNumber = Math.max(10, remainingSum - (30 * (9 - i)));
+                
+                if (maxNumber < minNumber) {
+                    return generateRingNumbers(targetSum);
+                }
+                
                 const number = Math.floor(Math.random() * (maxNumber - minNumber + 1)) + minNumber;
                 numbers.push(number);
                 remainingSum -= number;
             }
         }
 
-        shuffleArray(numbers);
+        if (numbers.some(num => num < 10 || num > 30)) {
+            return generateRingNumbers(targetSum);
+        }
 
+        shuffleArray(numbers);
         return numbers;
     }
 
@@ -189,10 +209,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const number = document.createElement('div');
             number.className = 'ring-number';
             number.textContent = numbers[i];
-            const angle = (i * 36 - 90 + 18) * Math.PI / 180; // 从12点钟方向开始，+18度使数字位于扇形中间
-            const radius = 50; // 调整半径使数字更靠近圆环中心
-            const x = 75 + radius * Math.cos(angle);
-            const y = 75 + radius * Math.sin(angle);
+            
+            // 修改数字位置计算
+            // 将角度偏移18度（36/2），使数字位于扇形中间
+            const angle = ((i * 36) + 18) * (Math.PI / 180); 
+            const radius = 65; // 调整半径，使数字位于圆环的合适位置
+            const x = 90 + radius * Math.sin(angle);
+            const y = 90 - radius * Math.cos(angle);
+            
             number.style.left = `${x}px`;
             number.style.top = `${y}px`;
             ring.appendChild(number);
@@ -201,7 +225,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // 添加顺序数字显示
         const orderNumber = document.createElement('div');
         orderNumber.className = 'order-number';
-        orderNumber.style.display = 'none'; // 初始时隐藏
+        orderNumber.style.display = 'none';
         ring.appendChild(orderNumber);
 
         ring.addEventListener('click', () => toggleRingSelection(ring));
@@ -270,16 +294,15 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('Is correct chain:', isCorrectChain);
 
         if (isCorrectChain && isEqualSum) {
-            const endTime = new Date();
-            const timeTaken = (endTime - startTime) / 1000; // 转换为秒
-            const score = calculateScore(timeTaken, attempts);
+            const totalTime = stopTimer();  // 获取总用时（毫秒）
+            const score = calculateScore(totalTime);
             
             if (score > highScore) {
                 highScore = score;
                 localStorage.setItem('magicRingsHighScore', highScore);
             }
 
-            showMessage(`恭喜你！你找到了正确的四环！\n用时：${timeTaken.toFixed(2)}秒\n尝试次数：${attempts}\n得分：${score}`, 'success');
+            showMessage(`恭喜你！你找到了正确的四环！\n用时：${formatTime(totalTime)}\n尝试次数：${attempts}\n得分：${score}`, 'success');
             updateScoreDisplay();
         } else {
             let errorMessage = '很遗憾，这不是正确的组合。';
@@ -293,11 +316,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function calculateScore(time, attempts) {
+    function calculateScore(timeInMs, attempts) {
         // 基础分数为10000
         let score = 10000;
-        // 每秒扣除10分
-        score -= Math.floor(time) * 10;
+        // 每秒扣除10分（现在使用毫秒计算）
+        score -= Math.floor(timeInMs / 1000) * 10;
         // 每次尝试扣除100分
         score -= (attempts - 1) * 100;
         // 确保分数不为负
@@ -350,6 +373,46 @@ document.addEventListener('DOMContentLoaded', () => {
                 messageElement.className = '';
             }, 500); // 等待淡出动画完成
         }, 4500); // 4.5秒后开始淡出
+    }
+
+    // 修改计时器相关函数
+    function startTimer() {
+        timerElement = document.getElementById('timer');
+        startTimeStamp = Date.now();  // 记录开始时间戳
+        
+        // 清除可能存在的旧计时器
+        if (timerInterval) {
+            clearInterval(timerInterval);
+        }
+        
+        // 启动新计时器，每10毫秒更新一次
+        timerInterval = setInterval(() => {
+            updateTimerDisplay();
+        }, 10);  // 设置为10毫秒更新一次
+    }
+
+    function stopTimer() {
+        if (timerInterval) {
+            clearInterval(timerInterval);
+        }
+        return Date.now() - startTimeStamp;  // 返回总用时（毫秒）
+    }
+
+    function updateTimerDisplay() {
+        const elapsedTime = Date.now() - startTimeStamp;
+        const minutes = Math.floor(elapsedTime / 60000);
+        const seconds = Math.floor((elapsedTime % 60000) / 1000);
+        const milliseconds = Math.floor((elapsedTime % 1000) / 10);  // 取前两位
+        
+        timerElement.textContent = `时间：${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(milliseconds).padStart(2, '0')}`;
+    }
+
+    // 修改时间格式化函数
+    function formatTime(milliseconds) {
+        const minutes = Math.floor(milliseconds / 60000);
+        const seconds = Math.floor((milliseconds % 60000) / 1000);
+        const ms = Math.floor((milliseconds % 1000) / 10);
+        return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(ms).padStart(2, '0')}`;
     }
 
     // 初始化游戏

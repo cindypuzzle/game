@@ -18,26 +18,30 @@
             text-align: center;
             background-color: rgba(255, 255, 255, 0.8);
             border-radius: 20px;
-            padding: 30px;
+            padding: 40px;
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
             position: relative;
+            max-width: 1200px;
+            margin: 20px;
         }
         h1 {
             color: #333;
+            margin-top: 10px;
             margin-bottom: 30px;
-            font-size: 2.5em;
+            font-size: 1.5em;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
         }
         #rings-container {
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
-            max-width: 800px;
+            max-width: 1000px;
             margin: 0 auto;
+            gap: 20px;
         }
         .ring {
-            width: 150px;
-            height: 150px;
+            width: 180px;
+            height: 180px;
             margin: 15px;
             border-radius: 50%;
             border: 3px solid #4a90e2;
@@ -65,11 +69,11 @@
             left: 50%;
             top: 50%;
             transform-origin: left top;
-            border-left: 1px solid #4a90e2;
+            border-left: 1.5px solid rgba(74, 144, 226, 0.5);
         }
         .ring-number {
             position: absolute;
-            font-size: 16px;
+            font-size: 14px;
             font-weight: bold;
             width: 30px;
             height: 30px;
@@ -80,11 +84,12 @@
             background-color: rgba(255, 255, 255, 0.9);
             border-radius: 50%;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-            transform: translate(-50%, -50%); /* 居中数字 */
+            transform: translate(-50%, -50%);
         }
         .selected {
-            background-color: rgba(74, 144, 226, 0.3);
+            background-color: rgba(74, 144, 226, 0.2);
             border-color: #2c3e50;
+            border-width: 4px;
         }
         #message {
             margin-top: 30px;
@@ -283,24 +288,103 @@
             text-decoration: none;
             cursor: pointer;
         }
+
+        #game-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            margin: 10px 0 20px 0;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            width: calc(100% - 40px);
+            position: relative;
+            z-index: 1;
+        }
+
+        #timer, #score-display {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+            padding: 5px 15px;
+            border-radius: 5px;
+            background-color: rgba(74, 144, 226, 0.1);
+        }
+
+        /* 移除旧的 score-display 样式 */
+        #score-display[style] {
+            position: static !important;
+            transform: none !important;
+        }
+
+        /* 添加顶部导航栏样式 */
+        .top-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 20px;
+            margin-bottom: 20px;
+        }
+
+        /* 修改标题样式 */
+        h1 {
+            margin: 0;
+            color: #333;
+            font-size: 1.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* 修改退出按钮样式 */
+        .exit-button {
+            position: static; /* 移除绝对定位 */
+            background-color: #f44336;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 8px 15px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        /* 修改帮助按钮样式 */
+        .help-button {
+            position: static; /* 移除绝对定位 */
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 8px 15px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        /* 调整游戏容器的内边距 */
+        #game-container {
+            padding: 20px;
+        }
     </style>
 </head>
 <body>
     <div id="game-container">
-        <!-- 添加退出按钮 -->
-        <button onclick="exitGame()" class="exit-button">退出</button>
+        <!-- 添加一个顶部导航栏容器 -->
+        <div class="top-nav">
+            <button onclick="exitGame()" class="exit-button">退出</button>
+            <h1><%= title %></h1>
+            <button onclick="showHelp()" class="help-button">帮助</button>
+        </div>
 
-        <!-- 添加帮助按钮 -->
-        <button onclick="showHelp()" class="help-button">帮助</button>
+        <div id="game-info">
+            <div id="timer">时间：00:00</div>
+            <div id="score-display">最高分：0</div>
+        </div>
 
-        <h1><%= title %></h1>
         <div id="rings-container"></div>
         <div id="message"></div>
-        <!-- 添加提示按钮 -->
         <button id="hint-button">提示</button>
-        <!-- 重新开始按钮 -->
         <button id="restart-button">重新开始</button>
-        <div id="score-display" style="position: absolute; top: 10px; left: 50%; transform: translateX(-50%); font-size: 18px; font-weight: bold;"></div>
     </div>
 
     <!-- 添加帮助模态框 -->
