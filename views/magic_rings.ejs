@@ -365,6 +365,83 @@
         #game-container {
             padding: 20px;
         }
+
+        /* 修改蒙层样式 */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .overlay-content {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .overlay-content h2 {
+            color: #333;
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+
+        .overlay-content p {
+            color: #666;
+            font-size: 1.2em;
+            margin-bottom: 30px;
+        }
+
+        #start-game-btn {
+            background: #4a90e2;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2em;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(74, 144, 226, 0.3);
+        }
+
+        #start-game-btn:hover {
+            background: #357abd;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(74, 144, 226, 0.4);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* 初始隐藏游戏内容 */
+        #game-container {
+            opacity: 1;
+            transition: none;
+        }
+
+        #game-container.show {
+            opacity: 1;
+        }
     </style>
 </head>
 <body>
@@ -401,6 +478,15 @@
             <p>3. 点击圆环可以选中或取消选中。</p>
             <p>4. 选中4个圆环后，系统会自动检查是否为正确答案。</p>
             <p>5. 你可以使用"提示"按钮获取帮助，或者"重新开始"按钮重置游戏。</p>
+        </div>
+    </div>
+
+    <!-- 在 body 中添加蒙层 -->
+    <div id="start-overlay" class="overlay">
+        <div class="overlay-content">
+            <h2>神奇四环</h2>
+            <p>准备好挑战了吗？</p>
+            <button id="start-game-btn">开始游戏</button>
         </div>
     </div>
 

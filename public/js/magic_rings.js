@@ -5,6 +5,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const messageElement = document.getElementById('message');
     const hintButton = document.getElementById('hint-button');
     const restartButton = document.getElementById('restart-button');
+    const startOverlay = document.getElementById('start-overlay');
+    const startGameBtn = document.getElementById('start-game-btn');
+    const gameContainer = document.getElementById('game-container');
+    
     let rings = [];
     let selectedRings = [];
     let chainedRings = [];
@@ -21,6 +25,39 @@ document.addEventListener('DOMContentLoaded', () => {
 
     timerElement = document.getElementById('timer');
 
+    // 初始加载时就创建游戏
+    createRings();
+    updateScoreDisplay();
+
+    // 修改开始游戏按钮的事件监听
+    startGameBtn.addEventListener('click', () => {
+        startOverlay.style.display = 'none';
+        startTimer(); // 只在点击开始时启动计时器
+    });
+
+    // 修改重新开始按钮的处理
+    if (restartButton) {
+        restartButton.addEventListener('click', () => {
+            console.log('Restart button clicked');
+            stopTimer();
+            createRings(); // 重新创建游戏
+            startOverlay.style.display = 'flex';
+            messageElement.textContent = '';
+            messageElement.className = '';
+        });
+    }
+
+    // 添加提示按钮事件监听器
+    if (hintButton) {
+        hintButton.addEventListener('click', () => {
+            console.log('Hint button clicked');
+            showHint();
+        });
+    } else {
+        console.error('Hint button not found');
+    }
+
+    // 修改 createRings 函数，移除自动开始计时的部分
     function createRings() {
         console.log('Creating rings');
         ringsContainer.innerHTML = '';
@@ -33,10 +70,6 @@ document.addEventListener('DOMContentLoaded', () => {
         targetSum = newTargetSum;
         chainedRings = newChainedRings;
 
-        console.log('New target sum:', targetSum);
-        console.log('Chained rings:', chainedRings);
-        console.log('Chained rings sums:', chainedRings.map(ring => ring.reduce((a, b) => a + b, 0)));
-
         allRings.forEach((numbers, id) => {
             const ring = createRing(id, numbers);
             rings.push(ring);
@@ -47,9 +80,6 @@ document.addEventListener('DOMContentLoaded', () => {
         startTime = new Date();
         attempts = 0;
         updateScoreDisplay();
-        
-        // 启动计时器
-        startTimer();
     }
 
     function generateValidRings() {
@@ -295,7 +325,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (isCorrectChain && isEqualSum) {
             const totalTime = stopTimer();  // 获取总用时（毫秒）
-            const score = calculateScore(totalTime);
+            const score = calculateScore(totalTime, attempts);
             
             if (score > highScore) {
                 highScore = score;
@@ -317,14 +347,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function calculateScore(timeInMs, attempts) {
+        // 确保参数都是数字
+        timeInMs = Number(timeInMs);
+        attempts = Number(attempts);
+        
         // 基础分数为10000
         let score = 10000;
-        // 每秒扣除10分（现在使用毫秒计算）
+        
+        // 每秒扣除10分（使用毫秒计算）
         score -= Math.floor(timeInMs / 1000) * 10;
-        // 每次尝试扣除100分
+        
+        // 每次尝试扣除100分（从第二次尝试开始算）
         score -= (attempts - 1) * 100;
-        // 确保分数不为负
-        return Math.max(score, 0);
+        
+        // 确保分数不为负，且为整数
+        return Math.max(0, Math.floor(score));
     }
 
     function updateScoreDisplay() {
@@ -413,26 +450,5 @@ document.addEventListener('DOMContentLoaded', () => {
         const seconds = Math.floor((milliseconds % 60000) / 1000);
         const ms = Math.floor((milliseconds % 1000) / 10);
         return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(ms).padStart(2, '0')}`;
-    }
-
-    // 初始化游戏
-    createRings();
-    updateScoreDisplay();
-
-    // 添加提示按钮事件监听器
-    hintButton.addEventListener('click', showHint);
-
-    // 添加重新开始按钮事件监听器
-    if (restartButton) {
-        console.log('Restart button found');
-        restartButton.addEventListener('click', () => {
-            console.log('Restart button clicked');
-            createRings();
-            messageElement.textContent = '';
-            messageElement.className = '';
-            console.log('Game restarted');
-        });
-    } else {
-        console.error('Restart button not found');
     }
 });
