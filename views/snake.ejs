@@ -7,60 +7,89 @@
     <style>
         body {
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
-            height: 100vh;
-            margin: 0;
             background-color: #f0f0f0;
-            font-family: Arial, sans-serif;
-        }
-        #game-container {
-            text-align: center;
-            background-color: white;
+            margin: 0;
             padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            font-family: "Microsoft YaHei", Arial, sans-serif;
         }
+
+        .header {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .back-button {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            padding: 8px 15px;
+            background-color: #4CAF50;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 16px;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+
+        .back-button:hover {
+            background-color: #45a049;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        h1 {
+            color: #333;
+            margin: 0;
+            padding: 20px 0;
+        }
+
         canvas {
             border: 2px solid #333;
             border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
         }
-        h1 {
-            color: #333;
-            margin-bottom: 20px;
+
+        @media (max-width: 500px) {
+            body {
+                padding: 10px;
+            }
+
+            .header {
+                margin-bottom: 15px;
+            }
+
+            .back-button {
+                left: 10px;
+                padding: 6px 12px;
+                font-size: 14px;
+            }
+
+            h1 {
+                font-size: 24px;
+                padding: 15px 0;
+            }
         }
-        #score {
-            font-size: 24px;
-            font-weight: bold;
-            color: #4CAF50;
-        }
-        #startButton {
-            margin-top: 20px;
-            padding: 10px 20px;
-            font-size: 18px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        #startButton:hover {
-            background-color: #45a049;
-        }
-        #startButton:disabled {
-            background-color: #cccccc;
-            cursor: not-allowed;
+
+        @media (hover: none) {
+            .back-button:active {
+                transform: translateY(-50%) scale(0.95);
+            }
         }
     </style>
 </head>
 <body>
-    <div id="game-container">
+    <div class="header">
+        <a href="/" class="back-button">返回</a>
         <h1>贪吃蛇</h1>
-        <canvas id="gameCanvas" width="400" height="400"></canvas>
-        <p>得分: <span id="score">0</span></p>
-        <button id="startButton">开始游戏</button>
     </div>
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
     <script src="/js/snake.js"></script>
 </body>
 </html>

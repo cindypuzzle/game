@@ -442,7 +442,88 @@
         #game-container.show {
             opacity: 1;
         }
+
+        .difficulty-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .difficulty-btn {
+            padding: 10px 25px;
+            font-size: 1.1em;
+            border: 2px solid #4a90e2;
+            border-radius: 20px;
+            background: transparent;
+            color: #4a90e2;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .difficulty-btn:hover {
+            background: rgba(74, 144, 226, 0.1);
+        }
+
+        .difficulty-btn.active {
+            background: #4a90e2;
+            color: white;
+        }
+
+        .difficulty-desc {
+            color: #666;
+            font-size: 1em;
+            margin: 10px 0 20px;
+            font-style: italic;
+        }
+
+        /* 添加成功消息的动画效果 */
+        @keyframes successPop {
+            0% { transform: scale(0.8); opacity: 0; }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .success {
+            background-color: #4CAF50;
+            color: white;
+            animation: successPop 0.5s ease-out;
+        }
+
+        /* 添加成功标题样式 */
+        .success-title {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            color: #4CAF50;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .success-title.show {
+            animation: successTitle 2s ease-out forwards;
+        }
+
+        @keyframes successTitle {
+            0% { 
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.5);
+            }
+            50% { 
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1.2);
+            }
+            100% { 
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(1);
+            }
+        }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
 </head>
 <body>
     <div id="game-container">
@@ -463,6 +544,8 @@
         <button id="hint-button">提示</button>
         <button id="restart-button">重新开始</button>
     </div>
+
+    <div id="success-title" class="success-title">恭喜通关！</div>
 
     <!-- 添加帮助模态框 -->
     <div id="helpModal" class="modal">
@@ -485,7 +568,12 @@
     <div id="start-overlay" class="overlay">
         <div class="overlay-content">
             <h2>神奇四环</h2>
-            <p>准备好挑战了吗？</p>
+            <p>选择游戏难度：</p>
+            <div class="difficulty-buttons">
+                <button class="difficulty-btn" data-difficulty="easy">初级</button>
+                <button class="difficulty-btn active" data-difficulty="medium">中级</button>
+            </div>
+            <p class="difficulty-desc">中级：数字范围 10-30</p>
             <button id="start-game-btn">开始游戏</button>
         </div>
     </div>
@@ -513,6 +601,79 @@
             if (event.target == document.getElementById('helpModal')) {
                 closeHelp();
             }
+        }
+
+        // 添加庆祝动画函数
+        function celebrateSuccess() {
+            // 显示成功标题
+            const successTitle = document.getElementById('success-title');
+            successTitle.classList.add('show');
+            setTimeout(() => {
+                successTitle.classList.remove('show');
+            }, 2000);
+
+            // 发射礼花
+            const duration = 3 * 1000;
+            const animationEnd = Date.now() + duration;
+
+            // 创建密集的礼花效果
+            const interval = setInterval(function() {
+                const timeLeft = animationEnd - Date.now();
+                
+                if (timeLeft <= 0) {
+                    return clearInterval(interval);
+                }
+
+                // 随机位置发射礼花
+                confetti({
+                    particleCount: 3,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0 },
+                    colors: ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff']
+                });
+                confetti({
+                    particleCount: 3,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1 },
+                    colors: ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff']
+                });
+            }, 50);
+
+            // 添加中间爆发效果
+            confetti({
+                particleCount: 100,
+                spread: 70,
+                origin: { y: 0.6 },
+                colors: ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff']
+            });
+
+            // 添加螺旋效果
+            const end = Date.now() + (1 * 1000);
+            const colors = ['#ff0000', '#00ff00', '#0000ff'];
+
+            (function frame() {
+                confetti({
+                    particleCount: 2,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0 },
+                    colors: colors
+                });
+                
+                confetti({
+                    particleCount: 2,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1 },
+                    colors: colors
+                });
+
+                if (Date.now() < end) {
+                    requestAnimationFrame(frame);
+                }
+            }());
         }
     </script>
 </body>

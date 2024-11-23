@@ -13,12 +13,10 @@ app.use(express.static(path.join(__dirname, 'public')));
 const indexRouter = require('./routes/index');
 const memoryGameRouter = require('./routes/memory_game');
 const magicRingsRouter = require('./routes/magic_rings');
-const symmetricPartitionRouter = require('./routes/symmetric_partition');
 const spiralGalaxyRouter = require('./routes/spiralGalaxy');
 app.use('/', indexRouter);
 app.use('/game/memory-game', memoryGameRouter);
 app.use('/game/magic-rings', magicRingsRouter);
-app.use('/game/symmetric-partition', symmetricPartitionRouter);
 app.use('/game/spiral-galaxy', spiralGalaxyRouter);
 
 // 添加2048游戏的路由
@@ -30,12 +28,17 @@ app.get('/game/guess-number', (req, res) => {
   res.render('guess_number');
 });
 
-// 在其他路由定义之后添加这个新路由
+// 贪吃蛇游戏路由
 app.get('/game/snake', (req, res) => {
     res.render('snake', { title: '贪吃蛇' });
 });
 
-// 在其他路由之后添加这个
+// 星系重逢游戏路由
+app.get('/game/spiral-galaxy', (req, res) => {
+    res.render('spiral_galaxy', { title: '星系重逢' });
+});
+
+// 错误处理中间件
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).send('Something broke!');

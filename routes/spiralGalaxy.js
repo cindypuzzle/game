@@ -7,7 +7,7 @@ router.get('/', (req, res) => {
     const puzzle = puzzles[puzzleId];
     
     res.render('spiralGalaxy', {
-        title: '星系拼图',
+        title: '星系重逢',
         puzzleId: puzzleId,
         puzzle: puzzle
     });

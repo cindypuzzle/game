@@ -7,11 +7,16 @@
     <link rel="stylesheet" href="/css/2048.css">
 </head>
 <body>
-    <h1>2048</h1>
+    <div class="header">
+        <a href="/" class="back-button">返回</a>
+        <h1>2048</h1>
+        <div id="score">分数: <span id="score-value">0</span></div>
+    </div>
     <div id="game-container">
         <div id="game-board"></div>
-        <div id="score">分数: <span id="score-value">0</span></div>
-        <button id="new-game">新游戏</button>
+        <div class="controls">
+            <button id="new-game">新游戏</button>
+        </div>
     </div>
     <script src="/js/2048.js"></script>
 </body>

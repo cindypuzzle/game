@@ -25,6 +25,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
     timerElement = document.getElementById('timer');
 
+    let currentDifficulty = 'medium'; // 默认中级难度
+
+    // 添加难度选择按钮的事件监听
+    const difficultyBtns = document.querySelectorAll('.difficulty-btn');
+    const difficultyDesc = document.querySelector('.difficulty-desc');
+    
+    difficultyBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            // 更新按钮状态
+            difficultyBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            // 更新当前难度
+            currentDifficulty = btn.dataset.difficulty;
+            
+            // 更新描述文本
+            difficultyDesc.textContent = currentDifficulty === 'easy' ? 
+                '初级：数字范围 1-9' : '中级：数字范围 10-30';
+        });
+    });
+
     // 初始加载时就创建游戏
     createRings();
     updateScoreDisplay();
@@ -32,7 +53,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // 修改开始游戏按钮的事件监听
     startGameBtn.addEventListener('click', () => {
         startOverlay.style.display = 'none';
-        startTimer(); // 只在点击开始时启动计时器
+        createRings(); // 使用当前选择的难度创建游戏
+        startTimer();
     });
 
     // 修改重新开始按钮的处理
@@ -85,9 +107,13 @@ document.addEventListener('DOMContentLoaded', () => {
     function generateValidRings() {
         const allRings = [];
         let chainedRings = null;
-        let targetSum = Math.floor(Math.random() * 51) + 150; // 生成150-200之间的随机目标和
+        // 根据难度调整目标和
+        let targetSum = currentDifficulty === 'easy' ? 
+            Math.floor(Math.random() * 31) + 40 : // 初级：40-70
+            Math.floor(Math.random() * 51) + 150;  // 中级：150-200
 
         console.log('Target sum:', targetSum);
+        console.log('Current difficulty:', currentDifficulty);
 
         // 生成四个符合条件的目标圆环
         while (!chainedRings) {
@@ -122,7 +148,10 @@ document.addEventListener('DOMContentLoaded', () => {
             // 随机修改一些数字，但保持首尾相连的特性
             for (let j = 0; j < 8; j++) {
                 if (j !== 0 && j !== 4 && j !== 5 && j !== 9) {
-                    newRing[j] = Math.floor(Math.random() * 21) + 10;
+                    // 根据难度生成对应范围的随机数
+                    newRing[j] = currentDifficulty === 'easy' ? 
+                        Math.floor(Math.random() * 9) + 1 :  // 初级：1-9
+                        Math.floor(Math.random() * 21) + 10; // 中级：10-30
                 }
             }
             
@@ -150,12 +179,22 @@ document.addEventListener('DOMContentLoaded', () => {
             const diff = (currentRing[4] + currentRing[5]) - (temp4 + temp5);
             if (diff !== 0) {
                 const adjustIndex = Math.floor(Math.random() * 8); // 0-7
-                currentRing[adjustIndex] = Math.max(0, Math.min(9, currentRing[adjustIndex] - diff));
+                const minNum = currentDifficulty === 'easy' ? 1 : 10;
+                const maxNum = currentDifficulty === 'easy' ? 9 : 30;
+                currentRing[adjustIndex] = Math.max(minNum, Math.min(maxNum, currentRing[adjustIndex] - diff));
             }
         }
 
         // 检查是否满足条件
-        if (checkAdjacentNumbers(rings) && rings.every(ring => ring.reduce((a, b) => a + b, 0) === targetSum)) {
+        if (checkAdjacentNumbers(rings) && rings.every(ring => {
+            const sum = ring.reduce((a, b) => a + b, 0);
+            const allNumbersInRange = ring.every(num => 
+                currentDifficulty === 'easy' ? 
+                    (num >= 1 && num <= 9) : 
+                    (num >= 10 && num <= 30)
+            );
+            return sum === targetSum && allNumbersInRange;
+        })) {
             return rings;
         }
 
@@ -166,15 +205,25 @@ document.addEventListener('DOMContentLoaded', () => {
         const numbers = [];
         let remainingSum = targetSum;
 
+        // 根据难度设置数字范围
+        const minNum = currentDifficulty === 'easy' ? 1 : 10;
+        const maxNum = currentDifficulty === 'easy' ? 9 : 30;
+        
+        // 调整目标和的范围
+        if (currentDifficulty === 'easy' && targetSum > 90) {
+            targetSum = Math.floor(Math.random() * 31) + 40; // 40-70之间
+            remainingSum = targetSum;
+        }
+
         for (let i = 0; i < 10; i++) {
             if (i === 9) {
-                if (remainingSum < 10 || remainingSum > 30) {
+                if (remainingSum < minNum || remainingSum > maxNum) {
                     return generateRingNumbers(targetSum);
                 }
                 numbers.push(remainingSum);
             } else {
-                const maxNumber = Math.min(30, remainingSum - (10 * (9 - i)));
-                const minNumber = Math.max(10, remainingSum - (30 * (9 - i)));
+                const maxNumber = Math.min(maxNum, remainingSum - (minNum * (9 - i)));
+                const minNumber = Math.max(minNum, remainingSum - (maxNum * (9 - i)));
                 
                 if (maxNumber < minNumber) {
                     return generateRingNumbers(targetSum);
@@ -186,7 +235,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        if (numbers.some(num => num < 10 || num > 30)) {
+        if (numbers.some(num => num < minNum || num > maxNum)) {
             return generateRingNumbers(targetSum);
         }
 
@@ -334,6 +383,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             showMessage(`恭喜你！你找到了正确的四环！\n用时：${formatTime(totalTime)}\n尝试次数：${attempts}\n得分：${score}`, 'success');
             updateScoreDisplay();
+            celebrateSuccess();
         } else {
             let errorMessage = '很遗憾，这不是正确的组合。';
             if (!isCorrectChain) {
@@ -450,5 +500,78 @@ document.addEventListener('DOMContentLoaded', () => {
         const seconds = Math.floor((milliseconds % 60000) / 1000);
         const ms = Math.floor((milliseconds % 1000) / 10);
         return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(ms).padStart(2, '0')}`;
+    }
+
+    // 添加庆祝动画函数
+    function celebrateSuccess() {
+        // 显示成功标题
+        const successTitle = document.getElementById('success-title');
+        successTitle.classList.add('show');
+        setTimeout(() => {
+            successTitle.classList.remove('show');
+        }, 2000);
+
+        // 发射礼花
+        const duration = 3 * 1000;
+        const animationEnd = Date.now() + duration;
+
+        // 创建密集的礼花效果
+        const interval = setInterval(function() {
+            const timeLeft = animationEnd - Date.now();
+            
+            if (timeLeft <= 0) {
+                return clearInterval(interval);
+            }
+
+            // 随机位置发射礼花
+            confetti({
+                particleCount: 3,
+                angle: 60,
+                spread: 55,
+                origin: { x: 0 },
+                colors: ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff']
+            });
+            confetti({
+                particleCount: 3,
+                angle: 120,
+                spread: 55,
+                origin: { x: 1 },
+                colors: ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff']
+            });
+        }, 50);
+
+        // 添加中间爆发效果
+        confetti({
+            particleCount: 100,
+            spread: 70,
+            origin: { y: 0.6 },
+            colors: ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff']
+        });
+
+        // 添加螺旋效果
+        const end = Date.now() + (1 * 1000);
+        const colors = ['#ff0000', '#00ff00', '#0000ff'];
+
+        (function frame() {
+            confetti({
+                particleCount: 2,
+                angle: 60,
+                spread: 55,
+                origin: { x: 0 },
+                colors: colors
+            });
+            
+            confetti({
+                particleCount: 2,
+                angle: 120,
+                spread: 55,
+                origin: { x: 1 },
+                colors: colors
+            });
+
+            if (Date.now() < end) {
+                requestAnimationFrame(frame);
+            }
+        }());
     }
 });

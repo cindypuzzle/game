@@ -7,39 +7,167 @@
     <style>
         body {
             font-family: 'Arial', sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
             margin: 0;
-            background-color: #f0f0f0;
+            background-color: #e8f4f8;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
+
+        .header {
+            width: 100%;
+            background: linear-gradient(135deg, #4a90e2, #67a6e5);
+            color: white;
+            padding: 12px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(74, 144, 226, 0.2);
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 500;
+            letter-spacing: 1px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 500px;
+            padding: 15px;
+            box-sizing: border-box;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            color: white;
+            flex: 1;
+            max-width: 150px;
+            font-weight: 500;
+        }
+
+        .btn-new {
+            background: linear-gradient(135deg, #34ace0, #63cdff);
+        }
+
+        .btn-exit {
+            background: linear-gradient(135deg, #ff6b6b, #ff8e8e);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .stats {
+            background-color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            box-shadow: 0 2px 15px rgba(74, 144, 226, 0.1);
+            margin: 10px 0;
+            display: flex;
+            gap: 20px;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #7f8fa6;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #4a90e2;
+        }
+
         .game-container {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
+            gap: 8px;
+            width: 100%;
+            max-width: 500px;
+            padding: 15px;
+            box-sizing: border-box;
         }
+
         .card {
-            width: 120px;
-            height: 120px;
-            background-color: #3498db;
-            border-radius: 10px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 60px;
+            width: 100%;
+            padding-bottom: 100%;
+            position: relative;
+            background: linear-gradient(135deg, #67a6e5, #4a90e2);
+            border-radius: 12px;
             cursor: pointer;
-            transition: transform 0.3s ease;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            transition: transform 0.3s ease, background-color 0.3s ease;
+            box-shadow: 0 2px 10px rgba(74, 144, 226, 0.15);
         }
+
         .card:hover {
-            transform: scale(1.05);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(74, 144, 226, 0.25);
         }
+
         .card.flipped {
-            background-color: #2ecc71;
+            background: linear-gradient(135deg, #34ace0, #63cdff);
+            transform: rotateY(180deg);
+        }
+
+        .card span {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 8vw;
+        }
+        
+        @media (min-width: 500px) {
+            .card span {
+                font-size: 40px;
+            }
         }
     </style>
 </head>
 <body>
+    <div class="header">
+        <h1>记忆翻牌</h1>
+    </div>
+
+    <div class="controls">
+        <button class="btn btn-exit" onclick="exitGame()">退出</button>
+        <button class="btn btn-new" onclick="startNewGame()">新游戏</button>
+    </div>
+
+    <div class="stats">
+        <div class="stat-item">
+            <span class="stat-label">时间</span>
+            <span class="stat-value" id="timer">00:00</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-label">步数</span>
+            <span class="stat-value" id="moves">0</span>
+        </div>
+    </div>
+
     <div class="game-container" id="gameContainer"></div>
 
     <script>
@@ -48,8 +176,49 @@
         let cards = [...emojis, ...emojis];
         let flippedCards = [];
         let matchedPairs = 0;
+        let moves = 0;
+        let timer;
+        let seconds = 0;
 
-        // 洗牌函数
+        function updateTimer() {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            document.getElementById('timer').textContent = 
+                `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+            seconds++;
+        }
+
+        function startTimer() {
+            if (timer) clearInterval(timer);
+            seconds = 0;
+            timer = setInterval(updateTimer, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(timer);
+        }
+
+        function updateMoves() {
+            moves++;
+            document.getElementById('moves').textContent = moves;
+        }
+
+        function startNewGame() {
+            gameContainer.innerHTML = '';
+            flippedCards = [];
+            matchedPairs = 0;
+            moves = 0;
+            document.getElementById('moves').textContent = '0';
+            startTimer();
+            createCards();
+        }
+
+        function exitGame() {
+            if (confirm('确定要退出游戏吗？')) {
+                window.location.href = '/games';
+            }
+        }
+
         function shuffle(array) {
             for (let i = array.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
@@ -58,7 +227,6 @@
             return array;
         }
 
-        // 创建卡片
         function createCards() {
             cards = shuffle(cards);
             for (let i = 0; i < cards.length; i++) {
@@ -70,12 +238,12 @@
             }
         }
 
-        // 翻牌
         function flipCard() {
             if (flippedCards.length < 2 && !this.classList.contains('flipped')) {
                 this.classList.add('flipped');
-                this.innerHTML = `<span style="font-size: 60px;">${this.dataset.value}</span>`;
+                this.innerHTML = `<span>${this.dataset.value}</span>`;
                 flippedCards.push(this);
+                updateMoves();
 
                 if (flippedCards.length === 2) {
                     setTimeout(checkMatch, 500);
@@ -83,13 +251,15 @@
             }
         }
 
-        // 检查匹配
         function checkMatch() {
             const [card1, card2] = flippedCards;
             if (card1.dataset.value === card2.dataset.value) {
                 matchedPairs++;
                 if (matchedPairs === emojis.length) {
-                    alert('恭喜你赢了!');
+                    stopTimer();
+                    setTimeout(() => {
+                        alert(`恭喜你赢了!\n用时: ${document.getElementById('timer').textContent}\n步数: ${moves}`);
+                    }, 300);
                 }
             } else {
                 card1.classList.remove('flipped');
@@ -100,7 +270,8 @@
             flippedCards = [];
         }
 
-        createCards();
+        // 初始化游戏
+        startNewGame();
     </script>
 </body>
 </html>
