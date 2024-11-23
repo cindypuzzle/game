@@ -95,6 +95,7 @@
         .game-memory { color: #9b59b6; }
         .game-rings { color: #3498db; }
         .game-galaxy { color: #1abc9c; }
+        .game-puzzle { color: #e67e22; }
 
         /* 移动端优化 */
         @media (max-width: 768px) {
@@ -189,6 +190,9 @@
                             break;
                         case 'spiral-galaxy':
                             iconClass = "game-icon game-galaxy fas fa-star";
+                            break;
+                        case 'sliding-puzzle':
+                            iconClass = "game-icon game-puzzle fas fa-puzzle-piece";
                             break;
                         default:
                             iconClass = "game-icon fas fa-gamepad";

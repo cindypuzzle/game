@@ -5,6 +5,53 @@ document.addEventListener('DOMContentLoaded', () => {
     let board = [];
     let score = 0;
 
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchEndX = 0;
+    let touchEndY = 0;
+
+    document.addEventListener('touchstart', (e) => {
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+    });
+
+    document.addEventListener('touchend', (e) => {
+        touchEndX = e.changedTouches[0].clientX;
+        touchEndY = e.changedTouches[0].clientY;
+        
+        const deltaX = touchEndX - touchStartX;
+        const deltaY = touchEndY - touchStartY;
+        
+        // 确定滑动方向的最小距离（像素）
+        const minDistance = 30;
+        
+        // 判断滑动方向
+        if (Math.abs(deltaX) > Math.abs(deltaY)) {
+            // 水平滑动
+            if (Math.abs(deltaX) > minDistance) {
+                if (deltaX > 0) {
+                    move('ArrowRight');
+                } else {
+                    move('ArrowLeft');
+                }
+            }
+        } else {
+            // 垂直滑动
+            if (Math.abs(deltaY) > minDistance) {
+                if (deltaY > 0) {
+                    move('ArrowDown');
+                } else {
+                    move('ArrowUp');
+                }
+            }
+        }
+    });
+
+    // 阻止页面滚动
+    document.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+    }, { passive: false });
+
     function initGame() {
         board = Array(4).fill().map(() => Array(4).fill(0));
         score = 0;

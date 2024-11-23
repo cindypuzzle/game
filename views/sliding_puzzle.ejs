@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title><%= title %></title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            background-color: #e8f4f8;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+            touch-action: none;
+        }
+
+        .header {
+            width: 100%;
+            background: linear-gradient(135deg, #4a90e2, #67a6e5);
+            color: white;
+            padding: 12px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(74, 144, 226, 0.2);
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 408px;
+            padding: 15px;
+            box-sizing: border-box;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            color: white;
+            flex: 1;
+            max-width: 150px;
+            font-weight: 500;
+        }
+
+        .btn-new {
+            background: linear-gradient(135deg, #34ace0, #63cdff);
+        }
+
+        .btn-exit {
+            background: linear-gradient(135deg, #ff6b6b, #ff8e8e);
+        }
+
+        .stats {
+            background-color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            box-shadow: 0 2px 15px rgba(74, 144, 226, 0.1);
+            margin: 10px 0;
+            display: flex;
+            gap: 20px;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #7f8fa6;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #4a90e2;
+        }
+
+        #game {
+            width: 408px;
+            height: 408px;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            margin: 20px auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 15px rgba(74, 144, 226, 0.1);
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        .game_item {
+            height: 90px;
+            width: 90px;
+            margin: 2px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #67a6e5, #4a90e2);
+            color: white;
+            text-align: center;
+            line-height: 90px;
+            cursor: pointer;
+            user-select: none;
+            font-size: 24px;
+            font-weight: bold;
+            transition: transform 0.2s ease;
+        }
+
+        .game_item:empty {
+            background: #e8f4f8;
+        }
+
+        .game_item:hover:not(:empty) {
+            transform: scale(1.02);
+        }
+
+        @media (max-width: 480px) {
+            #game {
+                width: 300px;
+                height: 300px;
+                margin: 10px auto;
+            }
+
+            .game_item {
+                height: 65px;
+                width: 65px;
+                line-height: 65px;
+                font-size: 18px;
+                margin: 2px;
+            }
+
+            .controls {
+                max-width: 300px;
+                padding: 10px;
+            }
+
+            .header h1 {
+                font-size: 24px;
+                margin: 8px 0;
+            }
+
+            .stats {
+                padding: 8px 15px;
+                margin: 8px 0;
+            }
+
+            .stat-value {
+                font-size: 18px;
+            }
+
+            .btn {
+                padding: 8px 16px;
+                font-size: 14px;
+            }
+        }
+
+        .firework-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 999;
+            overflow: hidden;
+        }
+
+        .firework {
+            position: absolute;
+            bottom: 0;
+            animation: launch 1s ease-out forwards;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            animation: explode 1s ease-out forwards;
+        }
+
+        @keyframes launch {
+            0% {
+                transform: translateY(0);
+            }
+            100% {
+                transform: translateY(-60vh);
+            }
+        }
+
+        @keyframes explode {
+            0% {
+                transform: translate(0) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(var(--tx), var(--ty)) scale(0);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>数字华容道</h1>
+    </div>
+
+    <div class="controls">
+        <button class="btn btn-exit" onclick="exitGame()">退出</button>
+        <button class="btn btn-new" onclick="startNewGame()">新游戏</button>
+    </div>
+
+    <div class="stats">
+        <div class="stat-item">
+            <span class="stat-label">时间</span>
+            <span class="stat-value" id="timer">00:00</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-label">步数</span>
+            <span class="stat-value" id="moves">0</span>
+        </div>
+    </div>
+
+    <div id="game"></div>
+
+    <script>
+        //初始布局
+        var numberList = [[1, 2, 3, 4],
+                        [5, 6, 7, 8],
+                        [9, 10, 11, 12],
+                        [13, 14, 15, 0]];
+        //0所处的位置
+        var zeroRow = 3;
+        var zeroCol = 3;
+        let moves = 0;
+        let timer;
+        let seconds = 0;
+        let isShuffling = false;
+
+        function updateTimer() {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            document.getElementById('timer').textContent = 
+                `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+            seconds++;
+        }
+
+        function startTimer() {
+            if (timer) clearInterval(timer);
+            seconds = 0;
+            timer = setInterval(updateTimer, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(timer);
+        }
+
+        function updateMoves() {
+            moves++;
+            document.getElementById('moves').textContent = moves;
+        }
+
+        function startNewGame() {
+            moves = 0;
+            document.getElementById('moves').textContent = '0';
+            // 重置初始布局
+            numberList = [[1, 2, 3, 4],
+                        [5, 6, 7, 8],
+                        [9, 10, 11, 12],
+                        [13, 14, 15, 0]];
+            zeroRow = 3;
+            zeroCol = 3;
+            chaos();
+            // 在打乱之后启动计时器
+            startTimer();
+        }
+
+        function exitGame() {
+            if (confirm('确定要退出游戏吗？')) {
+                window.location.href = '/';
+            }
+        }
+
+        //打乱的函数
+        function chaos() {
+            isShuffling = true;  // 开始打乱
+            //随机循环次数取[50, 100)
+            var rCount = Math.floor(Math.random() * 50 + 50);
+            for(let i = 0; i <= rCount; i++) {
+                //随机出0将要去的位置
+                let rRow = Math.floor(Math.random() * 4);
+                let rCol = Math.floor(Math.random() * 4);
+                zeroRun(rRow, rCol);
+            }
+            
+            // 如果打乱后恰好是胜利状态，则再次打乱
+            if (win()) {
+                chaos();
+                return;
+            }
+            isShuffling = false;  // 打乱结束
+        }
+
+        function zeroRun(row, col) {
+            // 如果在同一行或同一列，直接返回
+            if (row !== zeroRow && col !== zeroCol) {
+                return;
+            }
+            
+            //移动位置不变的话，直接return
+            if (numberList[row][col] === 0) {
+                return;
+            }
+
+            // 记录移动前的位置
+            const oldZeroRow = zeroRow;
+            const oldZeroCol = zeroCol;
+
+            //0移动到指定位置（横坐标）
+            if (row === zeroRow) {
+                // 水平移动
+                const direction = col > zeroCol ? 1 : -1;
+                for (let i = zeroCol; i !== col; i += direction) {
+                    numberList[row][i] = numberList[row][i + direction];
+                }
+                numberList[row][col] = 0;
+                zeroCol = col;
+            } else {
+                // 垂直移动
+                const direction = row > zeroRow ? 1 : -1;
+                for (let i = zeroRow; i !== row; i += direction) {
+                    numberList[i][col] = numberList[i + direction][col];
+                }
+                numberList[row][col] = 0;
+                zeroRow = row;
+            }
+
+            // 如果确实发生了移动，更新步数
+            if (oldZeroRow !== zeroRow || oldZeroCol !== zeroCol) {
+                updateMoves();
+            }
+
+            renderGame();
+
+            //判断是否胜利（只在非打乱状态下判断）
+            if (!isShuffling && win()) {
+                stopTimer();
+                setTimeout(() => {
+                    createFireworks();
+                }, 100);
+            }
+        }
+
+        function renderGame() {
+            const gameDiv = document.getElementById("game");
+            gameDiv.innerHTML = '';
+            
+            for (let i = 0; i < 4; i++) {
+                for (let j = 0; j < 4; j++) {
+                    const gameItem = document.createElement("div");
+                    gameItem.className = "game_item";
+                    //如果为0的话，不显示数字
+                    numberList[i][j] === 0 ? gameItem.innerText = "" : gameItem.innerText = numberList[i][j];
+                    gameItem.setAttribute("row", i);
+                    gameItem.setAttribute("col", j);
+                    gameDiv.appendChild(gameItem);
+                }
+            }
+        }
+
+        //判断胜利
+        function win() {
+            // 正确的数字序列应该是 1-15 按顺序排列，最后是0
+            const correctSequence = [
+                [1, 2, 3, 4],
+                [5, 6, 7, 8],
+                [9, 10, 11, 12],
+                [13, 14, 15, 0]
+            ];
+            
+            // 检查每个位置的数字是否正确
+            for (let i = 0; i < 4; i++) {
+                for (let j = 0; j < 4; j++) {
+                    if (numberList[i][j] !== correctSequence[i][j]) {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        // 监听用户点击事件
+        document.getElementById("game").addEventListener("click", function(e) {
+            // 获取被点击的元素
+            let clickedItem = e.target;
+            
+            // 如果点击的是数字块内的文本，则获取父元素
+            if (!clickedItem.hasAttribute("row")) {
+                clickedItem = clickedItem.closest(".game_item");
+            }
+            
+            if (clickedItem && clickedItem.className === "game_item") {
+                let row = parseInt(clickedItem.getAttribute("row"));
+                let col = parseInt(clickedItem.getAttribute("col"));
+                
+                // 检查点击的位置是否在空格的同一行或同一列
+                if (row === zeroRow || col === zeroCol) {
+                    zeroRun(row, col);
+                }
+            }
+        });
+
+        // 监听用户键盘事件
+        document.onkeydown = function(e) {
+            switch(e.code) {
+                case "ArrowUp":
+                    if (zeroRow === 3) return;
+                    zeroRun(zeroRow + 1, zeroCol);
+                    break;
+                case "ArrowDown":
+                    if (zeroRow === 0) return;
+                    zeroRun(zeroRow - 1, zeroCol);
+                    break;
+                case "ArrowLeft":
+                    if (zeroCol === 3) return;
+                    zeroRun(zeroRow, zeroCol + 1);
+                    break;
+                case "ArrowRight":
+                    if (zeroCol === 0) return;
+                    zeroRun(zeroRow, zeroCol - 1);
+                    break;
+                default: 
+                    break;
+            }
+        }
+
+        // 初始化游戏
+        startNewGame();
+
+        function createFireworks() {
+            const container = document.createElement('div');
+            container.className = 'firework-container';
+            document.body.appendChild(container);
+
+            // 创建多个烟花
+            for (let i = 0; i < 8; i++) {
+                setTimeout(() => {
+                    createSingleFirework(container);
+                }, i * 300); // 每隔300ms发射一个烟花
+            }
+
+            // 显示获胜信息
+            const message = document.createElement('div');
+            message.style.position = 'fixed';
+            message.style.top = '50%';
+            message.style.left = '50%';
+            message.style.transform = 'translate(-50%, -50%)';
+            message.style.background = 'rgba(255, 255, 255, 0.95)';
+            message.style.padding = '20px';
+            message.style.borderRadius = '10px';
+            message.style.boxShadow = '0 0 20px rgba(0,0,0,0.2)';
+            message.style.zIndex = '1000';
+            message.style.textAlign = 'center';
+            message.innerHTML = `
+                <h2 style="color: #4a90e2; margin: 0 0 10px 0; font-size: 24px;">🎉 恭喜你赢了！🎉</h2>
+                <p style="margin: 5px 0; font-size: 18px;">用时: ${document.getElementById('timer').textContent}</p>
+                <p style="margin: 5px 0; font-size: 18px;">步数: ${moves}</p>
+            `;
+            document.body.appendChild(message);
+
+            // 6秒后移除烟花和消息
+            setTimeout(() => {
+                container.remove();
+                message.remove();
+            }, 6000);
+        }
+
+        function createSingleFirework(container) {
+            const firework = document.createElement('div');
+            firework.className = 'firework';
+            firework.style.left = Math.random() * 100 + 'vw';
+            container.appendChild(firework);
+
+            // 烟花颜色
+            const colors = [
+                '#ff0000', '#00ff00', '#0000ff', '#ffff00', 
+                '#ff00ff', '#00ffff', '#ff9900', '#ff0099'
+            ];
+            const color = colors[Math.floor(Math.random() * colors.length)];
+
+            // 烟花爆炸
+            setTimeout(() => {
+                firework.remove();
+                createParticles(container, firework.offsetLeft, firework.offsetTop, color);
+            }, 1000);
+        }
+
+        function createParticles(container, x, y, color) {
+            // 创建多个粒子
+            for (let i = 0; i < 50; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = x + 'px';
+                particle.style.top = y + 'px';
+                particle.style.backgroundColor = color;
+
+                // 随机方向和距离
+                const angle = (Math.random() * Math.PI * 2);
+                const velocity = Math.random() * 200 + 100;
+                const tx = Math.cos(angle) * velocity;
+                const ty = Math.sin(angle) * velocity;
+                
+                particle.style.setProperty('--tx', `${tx}px`);
+                particle.style.setProperty('--ty', `${ty}px`);
+                
+                container.appendChild(particle);
+
+                // 1秒后移除粒子
+                setTimeout(() => particle.remove(), 1000);
+            }
+        }
+    </script>
+</body>
+</html> 

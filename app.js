@@ -14,10 +14,12 @@ const indexRouter = require('./routes/index');
 const memoryGameRouter = require('./routes/memory_game');
 const magicRingsRouter = require('./routes/magic_rings');
 const spiralGalaxyRouter = require('./routes/spiralGalaxy');
+const slidingPuzzleRouter = require('./routes/sliding_puzzle');
 app.use('/', indexRouter);
 app.use('/game/memory-game', memoryGameRouter);
 app.use('/game/magic-rings', magicRingsRouter);
 app.use('/game/spiral-galaxy', spiralGalaxyRouter);
+app.use('/game/sliding-puzzle', slidingPuzzleRouter);
 
 // 添加2048游戏的路由
 app.get('/game/2048', (req, res) => {

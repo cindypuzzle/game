@@ -32,6 +32,11 @@ router.get('/', function(req, res, next) {
       id: 'spiral-galaxy',
       title: '星系重逢',
       description: '有趣的星系重逢解谜游戏'
+    },
+    {
+      id: 'sliding-puzzle',
+      title: '数字华容道',
+      description: '经典的数字华容道游戏，通过移动方块将数字排序'
     }
   ];
   
