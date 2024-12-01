@@ -8,35 +8,44 @@
         body {
             font-family: 'Arial', sans-serif;
             margin: 0;
-            background-color: #e8f4f8;
+            background: linear-gradient(135deg, #e8f4f8, #d1e9f5);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
             width: 100%;
+            padding: 20px 0;
+            box-sizing: border-box;
         }
 
         .header {
             width: 100%;
             background: linear-gradient(135deg, #4a90e2, #67a6e5);
             color: white;
-            padding: 12px;
+            padding: 15px;
             text-align: center;
             box-shadow: 0 2px 10px rgba(74, 144, 226, 0.2);
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 600;
         }
 
         .controls {
             display: flex;
-            justify-content: space-between;
+            justify-content: center;
             width: 100%;
             max-width: 408px;
-            padding: 15px;
+            padding: 0 15px 15px;
             box-sizing: border-box;
-            gap: 10px;
+            gap: 15px;
         }
 
         .btn {
-            padding: 10px 20px;
+            padding: 12px 25px;
             border: none;
             border-radius: 25px;
             cursor: pointer;
@@ -44,8 +53,18 @@
             transition: all 0.3s ease;
             color: white;
             flex: 1;
-            max-width: 150px;
+            max-width: 120px;
             font-weight: 500;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn:active {
+            transform: translateY(0);
         }
 
         .btn-new {
@@ -62,12 +81,12 @@
 
         .stats {
             background-color: white;
-            padding: 10px 20px;
+            padding: 15px 30px;
             border-radius: 20px;
-            box-shadow: 0 2px 15px rgba(74, 144, 226, 0.1);
-            margin: 10px 0;
+            box-shadow: 0 4px 15px rgba(74, 144, 226, 0.1);
+            margin: 0 0 20px;
             display: flex;
-            gap: 20px;
+            gap: 40px;
         }
 
         .stat-item {
@@ -79,10 +98,11 @@
         .stat-label {
             font-size: 14px;
             color: #7f8fa6;
+            margin-bottom: 5px;
         }
 
         .stat-value {
-            font-size: 20px;
+            font-size: 24px;
             font-weight: bold;
             color: #4a90e2;
         }
@@ -91,24 +111,32 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 20px;
-            max-width: 408px;
+            width: 100%;
+            max-width: 520px;
             margin: 0 auto;
         }
 
         #game {
-            width: 408px;
-            height: 408px;
-            display: flex;
-            align-items: center;
-            flex-wrap: wrap;
+            width: 100%;
+            max-width: 520px;
+            height: 520px;
             background: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 15px rgba(74, 144, 226, 0.1);
-            padding: 0;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(74, 144, 226, 0.15);
+            padding: 25px;
             box-sizing: border-box;
             position: relative;
-            overflow: hidden;
+            overflow: visible;
+            margin: 0 auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #game canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
         }
 
         .maze-piece {
@@ -130,18 +158,20 @@
         }
 
         .game_item {
-            position: relative;
-            z-index: 1;
+            position: absolute;
+            z-index: 2;
             border-radius: 8px;
             background: linear-gradient(135deg, #67a6e5, #4a90e2);
             color: white;
             text-align: center;
             cursor: pointer;
             user-select: none;
-            font-size: 24px;
             font-weight: bold;
             transition: transform 0.2s ease;
-            box-sizing: border-box;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
         .game_item:empty {
@@ -151,12 +181,36 @@
         }
 
         @media (max-width: 480px) {
-            .container, #game, #drawing-board {
-                width: 300px;
+            body {
+                padding: 10px 0;
+            }
+
+            .header h1 {
+                font-size: 24px;
+            }
+
+            .controls {
+                padding: 0 10px 10px;
+            }
+
+            .btn {
+                padding: 10px 15px;
+                font-size: 14px;
+            }
+
+            .stats {
+                padding: 12px 20px;
+                gap: 30px;
+            }
+
+            .container, #game {
+                width: 380px;
             }
             
-            #game, #drawing-board {
-                height: 300px;
+            #game {
+                height: 380px;
+                padding: 20px;
+                border-radius: 12px;
             }
             
             .maze-piece {
@@ -248,21 +302,6 @@
     </div>
 
     <script>
-        //初始布局
-        var numberList = [[1, 2, 3, 4],
-                        [5, 6, 7, 8],
-                        [9, 10, 11, 12],
-                        [13, 14, 15, 0]];
-        //0所处的位置
-        var zeroRow = 3;
-        var zeroCol = 3;
-        let moves = 0;
-        let timer;
-        let seconds = 0;
-        let isShuffling = false;
-        let currentMaze = null;
-
-        // 迷宫相关常量定义
         const MAZE = {
             N: 1,  // 0001 - 北墙
             E: 2,  // 0010 - 东墙
@@ -270,108 +309,377 @@
             W: 8   // 1000 - 西墙
         };
 
-        // 修改迷宫配置
         const MAZE_CONFIG = {
-            wallThickness: 2,       // 墙的厚度
-            columns: 8,            // 8x8网格
+            wallThickness: 12,      // 增加墙的厚度到12像素
+            columns: 8,            
             rows: 8,
             backgroundColor: '#ffffff',
             mazeColor: '#000000',
             solveColor: '#cc3737',
-            startColor: '#ff6b6b',  // 入口颜色
-            endColor: '#34ace0'     // 出口颜色
+            startColor: '#ff6b6b',  
+            endColor: '#34ace0'     
         };
 
-        function updateTimer() {
-            const minutes = Math.floor(seconds / 60);
-            const remainingSeconds = seconds % 60;
-            document.getElementById('timer').textContent = 
-                `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
-            seconds++;
+        // 生成迷宫
+        function generateMaze() {
+            const width = 8;
+            const height = 8;
+            const maze = Array(height).fill().map(() => Array(width).fill(15)); // 15 = 所有墙
+            const visited = Array(height).fill().map(() => Array(width).fill(false));
+            
+            function carve(x, y) {
+                visited[y][x] = true;
+                
+                // 定义四个方向：北、东、南、西
+                const directions = [
+                    [0, -1, MAZE.N],
+                    [1, 0, MAZE.E],
+                    [0, 1, MAZE.S],
+                    [-1, 0, MAZE.W]
+                ];
+                
+                // 随机打乱方向
+                for (let i = directions.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [directions[i], directions[j]] = [directions[j], directions[i]];
+                }
+                
+                // 尝试每个方向
+                for (const [dx, dy, direction] of directions) {
+                    const newX = x + dx;
+                    const newY = y + dy;
+                    
+                    if (newX >= 0 && newX < width && newY >= 0 && newY < height && !visited[newY][newX]) {
+                        // 移除当前单元格的墙
+                        maze[y][x] &= ~direction;
+                        
+                        // 移除相邻单元格的对应墙
+                        const opposite = {
+                            [MAZE.N]: MAZE.S,
+                            [MAZE.S]: MAZE.N,
+                            [MAZE.E]: MAZE.W,
+                            [MAZE.W]: MAZE.E
+                        }[direction];
+                        
+                        maze[newY][newX] &= ~opposite;
+                        
+                        carve(newX, newY);
+                    }
+                }
+            }
+            
+            // 从(0,0)开始生成迷宫
+            carve(0, 0);
+            
+            // 确保入口和出口
+            maze[0][0] &= ~MAZE.N;  // 移除入口的北墙
+            maze[height-1][width-1] &= ~MAZE.S;  // 移除出口的南墙
+            
+            return maze;
         }
 
-        function startTimer() {
-            if (timer) clearInterval(timer);
-            seconds = 0;
-            timer = setInterval(updateTimer, 1000);
+        // 初始化迷宫
+        function initializeMazePieces() {
+            const game = document.getElementById('game');
+            game.innerHTML = '';
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = 520;     // 增加画布尺寸以适应更粗的墙
+            canvas.height = 520;
+            const ctx = canvas.getContext('2d');
+            
+            // 生成并保存迷宫
+            currentMaze = generateMaze();  // 保存到全局变量
+            
+            // 设置背景
+            ctx.fillStyle = MAZE_CONFIG.backgroundColor;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // 调整计算方式，确保迷宫完整显示
+            const margin = 60; // 增加边距
+            const availableSize = Math.min(canvas.width, canvas.height) - (margin * 2);
+            const cellSize = Math.floor(availableSize / 8);
+            const mazeSize = (cellSize * 8) + MAZE_CONFIG.wallThickness;
+            
+            // 计算居中偏移
+            const offsetX = Math.floor((canvas.width - mazeSize) / 2);
+            const offsetY = Math.floor((canvas.height - mazeSize) / 2);
+            
+            // 移动到绘制起点
+            ctx.translate(offsetX, offsetY);
+            
+            // 绘制迷宫墙壁
+            ctx.fillStyle = MAZE_CONFIG.mazeColor;
+            
+            // 先绘制外边框
+            ctx.fillRect(0, 0, mazeSize, MAZE_CONFIG.wallThickness); // 上边框
+            ctx.fillRect(0, 0, MAZE_CONFIG.wallThickness, mazeSize); // 左边框
+            ctx.fillRect(mazeSize - MAZE_CONFIG.wallThickness, 0, MAZE_CONFIG.wallThickness, mazeSize); // 右边框
+            ctx.fillRect(0, mazeSize - MAZE_CONFIG.wallThickness, mazeSize, MAZE_CONFIG.wallThickness); // 下边框
+            
+            // 绘制内部墙壁
+            for(let y = 0; y < 8; y++) {
+                for(let x = 0; x < 8; x++) {
+                    const cell = currentMaze[y][x];
+                    const px = x * cellSize;
+                    const py = y * cellSize;
+                    
+                    // 绘制北墙
+                    if (cell & MAZE.N) {
+                        ctx.fillRect(px, py, cellSize + MAZE_CONFIG.wallThickness, MAZE_CONFIG.wallThickness);
+                    }
+                    
+                    // 绘制西墙
+                    if (cell & MAZE.W) {
+                        ctx.fillRect(px, py, MAZE_CONFIG.wallThickness, cellSize + MAZE_CONFIG.wallThickness);
+                    }
+                    
+                    // 绘制东墙（最后一列）
+                    if (x === 7 || (cell & MAZE.E)) {
+                        ctx.fillRect(px + cellSize, py, MAZE_CONFIG.wallThickness, cellSize + MAZE_CONFIG.wallThickness);
+                    }
+                    
+                    // 绘制南墙（最后一行）
+                    if (y === 7 || (cell & MAZE.S)) {
+                        ctx.fillRect(px, py + cellSize, cellSize + MAZE_CONFIG.wallThickness, MAZE_CONFIG.wallThickness);
+                    }
+                }
+            }
+            
+            // 清除入口和出口
+            ctx.clearRect(0, 0, cellSize, MAZE_CONFIG.wallThickness); // 入口
+            ctx.clearRect(mazeSize - cellSize - MAZE_CONFIG.wallThickness, 
+                         mazeSize - MAZE_CONFIG.wallThickness, 
+                         cellSize + MAZE_CONFIG.wallThickness, 
+                         MAZE_CONFIG.wallThickness); // 出口
+            
+            // 添加入口和出口标记
+            ctx.beginPath();
+            ctx.fillStyle = MAZE_CONFIG.startColor;
+            ctx.arc(cellSize/2, MAZE_CONFIG.wallThickness/2, MAZE_CONFIG.wallThickness, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.fillStyle = MAZE_CONFIG.endColor;
+            ctx.arc(mazeSize - cellSize/2 - MAZE_CONFIG.wallThickness, 
+                    mazeSize - MAZE_CONFIG.wallThickness/2, 
+                    MAZE_CONFIG.wallThickness, 0, Math.PI * 2);
+            ctx.fill();
+            
+            game.appendChild(canvas);
+            
+            // 获取画布的实际渲染尺寸
+            const canvasRect = canvas.getBoundingClientRect();
+            const gameRect = game.getBoundingClientRect();
+            
+            // 计算画布相对于游戏容器的偏移
+            const canvasOffsetX = canvasRect.left - gameRect.left;
+            const canvasOffsetY = canvasRect.top - gameRect.top;
+            
+            // 重新计算华容道的大小和位置
+            const puzzleSize = mazeSize - (MAZE_CONFIG.wallThickness * 2); // 减去左右两边墙的厚度
+            const blockSize = Math.floor(puzzleSize / 4); // 每个方块的大小
+            const blockMargin = Math.floor(blockSize * 0.02); // 减小方块间距
+            
+            // 计算华容道的起始位置，考虑画布偏移和边距
+            const puzzleStartX = canvasOffsetX + offsetX - (MAZE_CONFIG.wallThickness / 2); // 更多地向左移动
+            const puzzleStartY = canvasOffsetY + offsetY - (MAZE_CONFIG.wallThickness / 2); // 更多地向上移动
+
+            // 清除现有的方块
+            const existingItems = game.querySelectorAll('.game_item');
+            existingItems.forEach(item => item.remove());
+
+            // 创建新的方块
+            for (let i = 0; i < 4; i++) {
+                for (let j = 0; j < 4; j++) {
+                    const gameItem = document.createElement("div");
+                    gameItem.className = "game_item";
+                    numberList[i][j] === 0 ? gameItem.innerText = "" : gameItem.innerText = numberList[i][j];
+                    gameItem.setAttribute("row", i);
+                    gameItem.setAttribute("col", j);
+                    
+                    // 计算每个方块的具体位置
+                    const left = puzzleStartX + (j * (blockSize + blockMargin));
+                    const top = puzzleStartY + (i * (blockSize + blockMargin));
+                    
+                    // 设置方块样式
+                    gameItem.style.left = left + 'px';
+                    gameItem.style.top = top + 'px';
+                    gameItem.style.width = (blockSize - blockMargin) + 'px';
+                    gameItem.style.height = (blockSize - blockMargin) + 'px';
+                    gameItem.style.lineHeight = (blockSize - blockMargin) + 'px';
+                    gameItem.style.fontSize = Math.floor(blockSize * 0.4) + 'px'; // 动态调整字体大小
+                    
+                    game.appendChild(gameItem);
+                }
+            }
         }
 
-        function stopTimer() {
-            clearInterval(timer);
+        // 页面加载时初始化迷宫
+        window.onload = function() {
+            currentMaze = generateMaze(); // 确保页面加载时就生成迷宫
+            initializeMazePieces();
         }
 
-        function updateMoves() {
-            moves++;
-            document.getElementById('moves').textContent = moves;
-        }
-
+        // 新游戏按钮点击事件
         function startNewGame() {
-            moves = 0;
-            document.getElementById('moves').textContent = '0';
-            // 重置初始布局
-            numberList = [[1, 2, 3, 4],
-                        [5, 6, 7, 8],
-                        [9, 10, 11, 12],
-                        [13, 14, 15, 0]];
-            zeroRow = 3;
-            zeroCol = 3;
-            
-            // 重新初始化迷宫和数字方块
-            const gameDiv = document.getElementById("game");
-            gameDiv.innerHTML = ''; // 清空所有内容
-            initializeMazePieces(); // 重新初始化迷宫和方块
-            
-            // 打乱数字方块
-            chaos();
-            
-            // 在打乱之后启动计时器
-            startTimer();
+            currentMaze = generateMaze(); // 开始新游戏时生成新迷宫
+            initializeMazePieces();
         }
 
+        // 退出按钮点击事件
         function exitGame() {
             if (confirm('确定要退出游戏吗？')) {
                 window.location.href = '/';
             }
         }
 
-        //打乱的函数
-        function chaos() {
-            isShuffling = true;  // 开始打乱
-            //随机循环次数取[50, 100)
-            var rCount = Math.floor(Math.random() * 50 + 50);
-            for(let i = 0; i <= rCount; i++) {
-                //随机出0将要去的位置
-                let rRow = Math.floor(Math.random() * 4);
-                let rCol = Math.floor(Math.random() * 4);
-                zeroRun(rRow, rCol);
+        // 修改寻路相关代码
+        function findPath(maze) {
+            const width = 8;
+            const height = 8;
+            const visited = Array(height).fill().map(() => Array(width).fill(false));
+            const path = [];
+            
+            function canMove(fromX, fromY, toX, toY) {
+                // 检查是否可以从一个格子移动到另一个格子
+                if (toX < 0 || toX >= width || toY < 0 || toY >= height) {
+                    return false;
+                }
+                
+                // 检查两个格子之间是否有墙
+                if (toX > fromX) { // 向东移动
+                    return !(maze[fromY][fromX] & MAZE.E);
+                } else if (toX < fromX) { // 向西移动
+                    return !(maze[fromY][fromX] & MAZE.W);
+                } else if (toY > fromY) { // 向南移动
+                    return !(maze[fromY][fromX] & MAZE.S);
+                } else if (toY < fromY) { // 向北移动
+                    return !(maze[fromY][fromX] & MAZE.N);
+                }
+                return false;
             }
             
-            // 如果打乱后恰好是胜利状态，则再次打乱
-            if (win()) {
-                chaos();
-                return;
+            function dfs(x, y) {
+                if (x === width-1 && y === height-1) {
+                    path.push([x, y]);
+                    return true;
+                }
+                
+                visited[y][x] = true;
+                path.push([x, y]);
+                
+                // 定义四个方向的移动
+                const moves = [
+                    [0, -1], // 北
+                    [1, 0],  // 东
+                    [0, 1],  // 南
+                    [-1, 0]  // 西
+                ];
+                
+                // 随机打乱移动顺序，使路径更随机
+                for (let i = moves.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [moves[i], moves[j]] = [moves[j], moves[i]];
+                }
+                
+                for (const [dx, dy] of moves) {
+                    const newX = x + dx;
+                    const newY = y + dy;
+                    
+                    if (!visited[newY]?.[newX] && canMove(x, y, newX, newY)) {
+                        if (dfs(newX, newY)) {
+                            return true;
+                        }
+                    }
+                }
+                
+                path.pop();
+                return false;
             }
-            isShuffling = false;  // 打乱结束
+            
+            if (dfs(0, 0)) {
+                return path;
+            }
+            return null;
         }
 
+        // 修改显示解法函数
+        function solveMaze() {
+            if (!currentMaze) {
+                console.error('No maze available');
+                return;
+            }
+            
+            const game = document.getElementById('game');
+            const canvas = game.querySelector('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // 获取当前迷宫的解决路径
+            const path = findPath(currentMaze);
+            
+            if (path && path.length > 0) {
+                const margin = 60;
+                const availableSize = Math.min(canvas.width, canvas.height) - (margin * 2);
+                const cellSize = Math.floor(availableSize / 8);
+                const mazeSize = (cellSize * 8) + MAZE_CONFIG.wallThickness;
+                const offsetX = Math.floor((canvas.width - mazeSize) / 2);
+                const offsetY = Math.floor((canvas.height - mazeSize) / 2);
+                
+                // 设置路径样式
+                ctx.save();
+                ctx.translate(offsetX, offsetY);
+                ctx.beginPath();
+                ctx.strokeStyle = MAZE_CONFIG.solveColor;
+                ctx.lineWidth = MAZE_CONFIG.wallThickness / 2;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                
+                // 移动到起点
+                const [firstX, firstY] = path[0];
+                ctx.moveTo(firstX * cellSize + cellSize/2, firstY * cellSize + cellSize/2);
+                
+                // 绘制路径
+                for (const [x, y] of path) {
+                    ctx.lineTo(x * cellSize + cellSize/2, y * cellSize + cellSize/2);
+                }
+                
+                ctx.stroke();
+                ctx.restore();
+            }
+        }
+
+        // 在全局作用域添加变量
+        let currentMaze = null;
+
+        // 初始布局
+        let numberList = [
+            [1, 2, 3, 4],
+            [5, 6, 7, 8],
+            [9, 10, 11, 12],
+            [13, 14, 15, 0]
+        ];
+        let zeroRow = 3;
+        let zeroCol = 3;
+        let moves = 0;
+        let timer;
+        let seconds = 0;
+        let isShuffling = false;
+
+        // 添加华容道的移动逻辑
         function zeroRun(row, col) {
-            // 如果在同一行或同一列，直接返回
             if (row !== zeroRow && col !== zeroCol) {
                 return;
             }
             
-            //移动位置不变的话，直接return
             if (numberList[row][col] === 0) {
                 return;
             }
 
-            // 记录移动前的位置
             const oldZeroRow = zeroRow;
             const oldZeroCol = zeroCol;
 
-            //0移动到指定位置（横坐标）
             if (row === zeroRow) {
-                // 水平移动
                 const direction = col > zeroCol ? 1 : -1;
                 for (let i = zeroCol; i !== col; i += direction) {
                     numberList[row][i] = numberList[row][i + direction];
@@ -379,7 +687,6 @@
                 numberList[row][col] = 0;
                 zeroCol = col;
             } else {
-                // 垂直移动
                 const direction = row > zeroRow ? 1 : -1;
                 for (let i = zeroRow; i !== row; i += direction) {
                     numberList[i][col] = numberList[i + direction][col];
@@ -388,88 +695,56 @@
                 zeroRow = row;
             }
 
-            // 如果确实发生了移动，更新步数
             if (oldZeroRow !== zeroRow || oldZeroCol !== zeroCol) {
-                updateMoves();
+                moves++;
+                document.getElementById('moves').textContent = moves;
             }
 
             renderGame();
-
-            //判是否胜利（只在非打乱状态下判断）
-            if (!isShuffling && win()) {
-                stopTimer();
-                setTimeout(() => {
-                    createFireworks();
-                }, 100);
-            }
         }
 
+        // 渲染华容道
         function renderGame() {
-            const gameDiv = document.getElementById("game");
-            // 保存迷宫背景
-            const mazeBackground = gameDiv.querySelector('canvas').parentElement;
-            // 清空其他内容
-            gameDiv.innerHTML = '';
-            // 重新添加迷宫背景
-            gameDiv.appendChild(mazeBackground);
+            const game = document.getElementById("game");
+            const items = game.querySelectorAll('.game_item');
             
-            // 重新添加数字方块
-            for (let i = 0; i < 4; i++) {
-                for (let j = 0; j < 4; j++) {
-                    const gameItem = document.createElement("div");
-                    gameItem.className = "game_item";
-                    //如果为0的话，不显示数字
-                    numberList[i][j] === 0 ? gameItem.innerText = "" : gameItem.innerText = numberList[i][j];
-                    gameItem.setAttribute("row", i);
-                    gameItem.setAttribute("col", j);
-                    gameDiv.appendChild(gameItem);
-                }
-            }
+            items.forEach(item => {
+                const row = parseInt(item.getAttribute('row'));
+                const col = parseInt(item.getAttribute('col'));
+                item.innerText = numberList[row][col] === 0 ? "" : numberList[row][col];
+            });
         }
 
-        //判断胜利
-        function win() {
-            // 正确的数字序列应该是 1-15 按顺序排列，最后是0
-            const correctSequence = [
-                [1, 2, 3, 4],
-                [5, 6, 7, 8],
-                [9, 10, 11, 12],
-                [13, 14, 15, 0]
-            ];
-            
-            // 检查每个位置的数字是否正确
-            for (let i = 0; i < 4; i++) {
-                for (let j = 0; j < 4; j++) {
-                    if (numberList[i][j] !== correctSequence[i][j]) {
-                        return false;
-                    }
-                }
+        // 打乱华容道
+        function chaos() {
+            isShuffling = true;
+            const rCount = Math.floor(Math.random() * 50 + 50);
+            for(let i = 0; i <= rCount; i++) {
+                const rRow = Math.floor(Math.random() * 4);
+                const rCol = Math.floor(Math.random() * 4);
+                zeroRun(rRow, rCol);
             }
-            return true;
+            isShuffling = false;
         }
 
-        // 监听用户点击事件
+        // 添加事件监听
         document.getElementById("game").addEventListener("click", function(e) {
-            // 获取被点击的元素
             let clickedItem = e.target;
-            
-            // 如果点击的是数字块内的文本，则获取父元素
             if (!clickedItem.hasAttribute("row")) {
                 clickedItem = clickedItem.closest(".game_item");
             }
             
             if (clickedItem && clickedItem.className === "game_item") {
-                let row = parseInt(clickedItem.getAttribute("row"));
-                let col = parseInt(clickedItem.getAttribute("col"));
+                const row = parseInt(clickedItem.getAttribute("row"));
+                const col = parseInt(clickedItem.getAttribute("col"));
                 
-                // 检查点击的位置是否在空格的同一行或同一
                 if (row === zeroRow || col === zeroCol) {
                     zeroRun(row, col);
                 }
             }
         });
 
-        // 监听用户键盘事件
+        // 添加键盘控制
         document.onkeydown = function(e) {
             switch(e.code) {
                 case "ArrowUp":
@@ -488,397 +763,17 @@
                     if (zeroCol === 0) return;
                     zeroRun(zeroRow, zeroCol - 1);
                     break;
-                default: 
-                    break;
             }
         }
 
-        // 初始化游戏
-        startNewGame();
-
-        function createFireworks() {
-            const container = document.createElement('div');
-            container.className = 'firework-container';
-            document.body.appendChild(container);
-
-            // 创建多个烟花
-            for (let i = 0; i < 8; i++) {
-                setTimeout(() => {
-                    createSingleFirework(container);
-                }, i * 300); // 每隔300ms发射一个烟花
-            }
-
-            // 示获胜信息
-            const message = document.createElement('div');
-            message.style.position = 'fixed';
-            message.style.top = '50%';
-            message.style.left = '50%';
-            message.style.transform = 'translate(-50%, -50%)';
-            message.style.background = 'rgba(255, 255, 255, 0.95)';
-            message.style.padding = '20px';
-            message.style.borderRadius = '10px';
-            message.style.boxShadow = '0 0 20px rgba(0,0,0,0.2)';
-            message.style.zIndex = '1000';
-            message.style.textAlign = 'center';
-            message.innerHTML = `
-                <h2 style="color: #4a90e2; margin: 0 0 10px 0; font-size: 24px;">🎉 恭喜你赢了！🎉</h2>
-                <p style="margin: 5px 0; font-size: 18px;">用时: ${document.getElementById('timer').textContent}</p>
-                <p style="margin: 5px 0; font-size: 18px;">步数: ${moves}</p>
-            `;
-            document.body.appendChild(message);
-
-            // 6秒后移除烟花和消息
-            setTimeout(() => {
-                container.remove();
-                message.remove();
-            }, 6000);
-        }
-
-        function createSingleFirework(container) {
-            const firework = document.createElement('div');
-            firework.className = 'firework';
-            firework.style.left = Math.random() * 100 + 'vw';
-            container.appendChild(firework);
-
-            // 烟花颜色
-            const colors = [
-                '#ff0000', '#00ff00', '#0000ff', '#ffff00', 
-                '#ff00ff', '#00ffff', '#ff9900', '#ff0099'
-            ];
-            const color = colors[Math.floor(Math.random() * colors.length)];
-
-            // 烟花爆炸
-            setTimeout(() => {
-                firework.remove();
-                createParticles(container, firework.offsetLeft, firework.offsetTop, color);
-            }, 1000);
-        }
-
-        function createParticles(container, x, y, color) {
-            // 创建多个粒子
-            for (let i = 0; i < 50; i++) {
-                const particle = document.createElement('div');
-                particle.className = 'particle';
-                particle.style.left = x + 'px';
-                particle.style.top = y + 'px';
-                particle.style.backgroundColor = color;
-
-                // 随机方向和距离
-                const angle = (Math.random() * Math.PI * 2);
-                const velocity = Math.random() * 200 + 100;
-                const tx = Math.cos(angle) * velocity;
-                const ty = Math.sin(angle) * velocity;
-                
-                particle.style.setProperty('--tx', `${tx}px`);
-                particle.style.setProperty('--ty', `${ty}px`);
-                
-                container.appendChild(particle);
-
-                // 1秒后移除粒子
-                setTimeout(() => particle.remove(), 1000);
-            }
-        }
-
-        // 迷宫生成相关代码
-        function generateMaze() {
-            const width = 8;  // 改为8x8
-            const height = 8;
-            const maze = Array(height).fill().map(() => Array(width).fill(15));
-            const visited = Array(height).fill().map(() => Array(width).fill(false));
-            
-            function removeWall(x, y, dir) {
-                // 移除当前单元格的墙
-                maze[y][x] &= ~dir;
-                // 移除相邻单元格的对应墙
-                const [nx, ny] = getNextPosition(x, y, dir);
-                if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
-                    maze[ny][nx] &= ~getOppositeWall(dir);
-                }
-            }
-            
-            function getNextPosition(x, y, dir) {
-                switch(dir) {
-                    case MAZE.N: return [x, y-1];
-                    case MAZE.E: return [x+1, y];
-                    case MAZE.S: return [x, y+1];
-                    case MAZE.W: return [x-1, y];
-                }
-            }
-            
-            function getOppositeWall(dir) {
-                switch(dir) {
-                    case MAZE.N: return MAZE.S;
-                    case MAZE.E: return MAZE.W;
-                    case MAZE.S: return MAZE.N;
-                    case MAZE.W: return MAZE.E;
-                }
-            }
-            
-            function getUnvisitedNeighbors(x, y) {
-                const neighbors = [];
-                const directions = [MAZE.N, MAZE.E, MAZE.S, MAZE.W];
-                
-                for (const dir of directions) {
-                    const [nx, ny] = getNextPosition(x, y, dir);
-                    if (nx >= 0 && nx < width && ny >= 0 && ny < height && !visited[ny][nx]) {
-                        neighbors.push({x: nx, y: ny, dir: dir});
-                    }
-                }
-                
-                return neighbors;
-            }
-            
-            function carve(x, y) {
-                visited[y][x] = true;
-                
-                // 获取未访问的邻居并随机打乱顺序
-                let neighbors = getUnvisitedNeighbors(x, y);
-                neighbors.sort(() => Math.random() - 0.5);
-                
-                for (const next of neighbors) {
-                    if (!visited[next.y][next.x]) {
-                        removeWall(x, y, next.dir);
-                        carve(next.x, next.y);
-                    }
-                }
-            }
-            
-            // 从(0,0)开始生成迷宫
-            carve(0, 0);
-            
-            // 添加入口和出口
-            maze[0][0] &= ~MAZE.N;  // 入口在左上角
-            maze[height-1][width-1] &= ~MAZE.S;  // 出口在右下角
-            
-            return maze;
-        }
-
-        function initializeMazePieces() {
-            const game = document.getElementById('game');
-            
-            const mazeBackground = document.createElement('div');
-            mazeBackground.style.position = 'absolute';
-            mazeBackground.style.top = '0';
-            mazeBackground.style.left = '0';
-            mazeBackground.style.width = '408px';
-            mazeBackground.style.height = '408px';
-            mazeBackground.style.zIndex = '0';
-            
-            const canvas = document.createElement('canvas');
-            canvas.width = 408;
-            canvas.height = 408;
-            const ctx = canvas.getContext('2d');
-            
-            currentMaze = generateMaze();
-            
-            // 设置背景
-            ctx.fillStyle = MAZE_CONFIG.backgroundColor;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            // 计算迷宫的实际大小，留出足够空间显示所有墙壁
-            const margin = 10;
-            const availableWidth = canvas.width - (margin * 2);
-            const availableHeight = canvas.height - (margin * 2);
-            const cellSize = Math.min(
-                Math.floor((availableWidth - MAZE_CONFIG.wallThickness) / 8),
-                Math.floor((availableHeight - MAZE_CONFIG.wallThickness) / 8)
-            );
-            const mazeWidth = cellSize * 8 + MAZE_CONFIG.wallThickness; // 加上最后一个墙的宽度
-            const mazeHeight = cellSize * 8 + MAZE_CONFIG.wallThickness; // 加上最后一个墙的高度
-            
-            // 计算华容道方块的大小（2x2个迷宫单元格）
-            const blockSize = cellSize * 2;
-            
-            // 计算居中偏移
-            const offsetX = (canvas.width - mazeWidth) / 2;
-            const offsetY = (canvas.height - mazeHeight) / 2;
-            
-            // 移动绘制起点以居中迷宫
-            ctx.translate(offsetX, offsetY);
-            
-            // 绘制迷宫墙壁
-            ctx.fillStyle = MAZE_CONFIG.mazeColor;
-            
-            // 绘制所有墙壁
-            for(let y = 0; y < 8; y++) {
-                for(let x = 0; x < 8; x++) {
-                    const cell = currentMaze[y][x];
-                    const px = x * cellSize;
-                    const py = y * cellSize;
-                    
-                    // 绘制北墙
-                    if (cell & MAZE.N) {
-                        ctx.fillRect(px, py, cellSize + MAZE_CONFIG.wallThickness, MAZE_CONFIG.wallThickness);
-                    }
-                    
-                    // 绘制西墙
-                    if (cell & MAZE.W) {
-                        ctx.fillRect(px, py, MAZE_CONFIG.wallThickness, cellSize + MAZE_CONFIG.wallThickness);
-                    }
-                    
-                    // 绘制东墙（包括最后一列）
-                    if (cell & MAZE.E || x === 7) {
-                        ctx.fillRect(px + cellSize, py, MAZE_CONFIG.wallThickness, cellSize + MAZE_CONFIG.wallThickness);
-                    }
-                    
-                    // 绘制南墙（包括最后一行）
-                    if (cell & MAZE.S || y === 7) {
-                        ctx.fillRect(px, py + cellSize, cellSize + MAZE_CONFIG.wallThickness, MAZE_CONFIG.wallThickness);
-                    }
-                }
-            }
-            
-            // 清除入口和出口的墙
-            ctx.clearRect(0, 0, cellSize, MAZE_CONFIG.wallThickness); // 入口
-            ctx.clearRect(mazeWidth - cellSize - MAZE_CONFIG.wallThickness, mazeHeight - MAZE_CONFIG.wallThickness, 
-                         cellSize + MAZE_CONFIG.wallThickness, MAZE_CONFIG.wallThickness); // 出口
-            
-            // 添加入口和出口标记
-            ctx.beginPath();
-            ctx.fillStyle = MAZE_CONFIG.startColor;
-            ctx.arc(cellSize/2, MAZE_CONFIG.wallThickness/2, 4, 0, Math.PI * 2);
-            ctx.fill();
-            
-            ctx.beginPath();
-            ctx.fillStyle = MAZE_CONFIG.endColor;
-            ctx.arc(mazeWidth - cellSize/2 - MAZE_CONFIG.wallThickness, 
-                    mazeHeight - MAZE_CONFIG.wallThickness/2, 4, 0, Math.PI * 2);
-            ctx.fill();
-            
-            mazeBackground.appendChild(canvas);
-            game.appendChild(mazeBackground);
-            
-            // 修改数字方块的添加部分
-            for (let i = 0; i < 4; i++) {
-                for (let j = 0; j < 4; j++) {
-                    const gameItem = document.createElement("div");
-                    gameItem.className = "game_item";
-                    numberList[i][j] === 0 ? gameItem.innerText = "" : gameItem.innerText = numberList[i][j];
-                    gameItem.setAttribute("row", i);
-                    gameItem.setAttribute("col", j);
-                    gameItem.style.position = 'absolute';
-                    gameItem.style.left = (offsetX + j * blockSize) + 'px';
-                    gameItem.style.top = (offsetY + i * blockSize) + 'px';
-                    gameItem.style.width = (blockSize - 4) + 'px'; // 减去间隙
-                    gameItem.style.height = (blockSize - 4) + 'px'; // 减去间隙
-                    gameItem.style.lineHeight = (blockSize - 4) + 'px';
-                    gameItem.style.margin = '2px'; // 添加间隙
-                    game.appendChild(gameItem);
-                }
-            }
-        }
-
-        // 修改 window.onload 函数
-        window.onload = function() {
-            // 移除 initializeDrawingBoard 的调用，因为我们不再需要下方的画板
-            initializeMazePieces();
-            startNewGame();
-        }
-
-        // 修改 solveMaze 函数，让它在游戏区域显示解决路径
-        function solveMaze() {
-            if (!currentMaze) return;
-
-            const game = document.getElementById('game');
-            const canvas = game.querySelector('canvas');
-            const ctx = canvas.getContext('2d');
-
-            const path = findPath(currentMaze);
-            
-            if (path) {
-                ctx.beginPath();
-                ctx.strokeStyle = '#cc3737';
-                ctx.lineWidth = 3;
-                ctx.lineCap = 'round';
-                
-                const cellSize = canvas.width / 8;
-                
-                // 移动到起点中心
-                ctx.moveTo(cellSize/2, 0);
-                
-                // 绘制路径
-                for (let i = 0; i < path.length; i++) {
-                    const [x, y] = path[i];
-                    ctx.lineTo(
-                        x * cellSize + cellSize/2,
-                        y * cellSize + cellSize/2
-                    );
-                }
-                
-                // 连接到终点
-                ctx.lineTo(
-                    7 * cellSize + cellSize/2,
-                    canvas.height
-                );
-                
-                ctx.stroke();
-            }
-        }
-
-        function findPath(maze) {
-            const width = 8;   // 改为8x8
-            const height = 8;
-            const visited = Array(height).fill().map(() => Array(width).fill(false));
-            const path = [];
-            
-            function canMove(fromX, fromY, toX, toY) {
-                // 检查是否可以从一个格子移动到另一个格子
-                if (toX < 0 || toX >= width || toY < 0 || toY >= height) {
-                    return false;
-                }
-                
-                // 检查墙的方向
-                if (toX > fromX) { // 向东移动
-                    return !(maze[fromY][fromX] & MAZE.E);
-                } else if (toX < fromX) { // 向西移动
-                    return !(maze[fromY][fromX] & MAZE.W);
-                } else if (toY > fromY) { // 向南移动
-                    return !(maze[fromY][fromX] & MAZE.S);
-                } else if (toY < fromY) { // 向北移动
-                    return !(maze[fromY][fromX] & MAZE.N);
-                }
-                return false;
-            }
-            
-            function dfs(x, y) {
-                if (x === 7 && y === 7) {
-                    path.push([x, y]);
-                    return true;
-                }
-                
-                visited[y][x] = true;
-                
-                // 定义四个方向：北、东、南、西
-                const directions = [
-                    [0, -1], // 北
-                    [1, 0],  // 东
-                    [0, 1],  // 南
-                    [-1, 0]  // 西
-                ];
-                
-                for (const [dx, dy] of directions) {
-                    const newX = x + dx;
-                    const newY = y + dy;
-                    
-                    if (!visited[newY]?.[newX] && canMove(x, y, newX, newY)) {
-                        path.push([x, y]);
-                        if (dfs(newX, newY)) {
-                            return true;
-                        }
-                        path.pop();
-                    }
-                }
-                
-                visited[y][x] = false;
-                return false;
-            }
-            
-            // 从起点开始搜索
-            if (dfs(0, 0)) {
-                return path;
-            }
-            return null;
-        }
+        // 添加窗口大小变化时重新计算位置的处理
+        window.addEventListener('resize', function() {
+            // 添加防抖处理
+            clearTimeout(window.resizeTimer);
+            window.resizeTimer = setTimeout(function() {
+                initializeMazePieces();
+            }, 250);
+        });
     </script>
 </body>
 </html> 
