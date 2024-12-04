@@ -429,7 +429,7 @@
             game.innerHTML = '';
             
             const canvas = document.createElement('canvas');
-            canvas.width = 520;     // 增加画布尺寸以适应更粗的墙
+            canvas.width = 520;     // 增加画布尺寸以适更粗的墙
             canvas.height = 520;
             const ctx = canvas.getContext('2d');
             
@@ -526,7 +526,7 @@
             const blockSize = Math.floor(puzzleSize / 4); // 每个方块的大小
             const blockMargin = 0; // 移除方块间距
             
-            // 计算华容道的起始位��，考虑画布偏移和边距
+            // 计算华容道的起始位考虑画布偏移和边距
             const puzzleStartX = canvasOffsetX + offsetX - (MAZE_CONFIG.wallThickness / 2); // 更多地向移动
             const puzzleStartY = canvasOffsetY + offsetY - (MAZE_CONFIG.wallThickness / 2); // 更多地向上移动
 
@@ -543,7 +543,7 @@
                     gameItem.setAttribute("row", i);
                     gameItem.setAttribute("col", j);
                     
-                    // 计算每个方块的具体位置
+                    // 计算每个���块的具体位置
                     const left = puzzleStartX + (j * (blockSize + blockMargin));
                     const top = puzzleStartY + (i * (blockSize + blockMargin));
                     
@@ -734,7 +734,7 @@
             // 使用当前的变换状态
             ctx.setTransform(currentTransform);
             
-            // 绘制迷宫墙壁
+            // 绘迷宫墙壁
             ctx.fillStyle = MAZE_CONFIG.mazeColor;
             
             // 使用与初始化时相同的尺寸
@@ -997,99 +997,199 @@
         let drawingCtx = null;
         let drawingCanvas = null;
 
-        // 添加 getCoordinates 函数
+        // 修改 getCoordinates 函数
         function getCoordinates(e) {
-            const rect = drawingCanvas.getBoundingClientRect();
-            const scaleX = drawingCanvas.width / rect.width;
-            const scaleY = drawingCanvas.height / rect.height;
+            const mirrorMaze = document.getElementById('mirror-maze');
+            const rect = mirrorMaze.getBoundingClientRect();
             
+            // 使用与迷宫生成时完全相同的计算方式
+            const margin = 60;
+            const availableSize = Math.min(rect.width, rect.height) - (margin * 2);
+            const cellSize = Math.floor(availableSize / 8);
+            const mazeSize = (cellSize * 8) + MAZE_CONFIG.wallThickness;
+            
+            // 计算居中偏移
+            const offsetX = Math.floor((rect.width - mazeSize) / 2);
+            const offsetY = Math.floor((rect.height - mazeSize) / 2);
+            
+            let clientX, clientY;
             if (e.type.includes('touch')) {
-                return [
-                    (e.touches[0].clientX - rect.left) * scaleX,
-                    (e.touches[0].clientY - rect.top) * scaleY
-                ];
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
             }
+            
+            // 计算相对于迷宫原点的坐标
             return [
-                (e.clientX - rect.left) * scaleX,
-                (e.clientY - rect.top) * scaleY
+                clientX - rect.left - offsetX,
+                clientY - rect.top - offsetY
             ];
+        }
+
+        // 修改 getNearestCellCenter 函数
+        function getNearestCellCenter(x, y) {
+            const mirrorMaze = document.getElementById('mirror-maze');
+            const rect = mirrorMaze.getBoundingClientRect();
+            
+            // 使用与迷宫生成时完全相同的计算方式
+            const margin = 60;
+            const availableSize = Math.min(rect.width, rect.height) - (margin * 2);
+            const cellSize = Math.floor(availableSize / 8);
+            const mazeSize = (cellSize * 8) + MAZE_CONFIG.wallThickness;
+            
+            // 计算居中偏移
+            const offsetX = Math.floor((rect.width - mazeSize) / 2);
+            const offsetY = Math.floor((rect.height - mazeSize) / 2);
+            
+            // 计算格子索引（考虑第一个边框的宽度）
+            const col = Math.floor((x - MAZE_CONFIG.wallThickness) / cellSize);
+            const row = Math.floor((y - MAZE_CONFIG.wallThickness) / cellSize);
+            
+            // 确保索引在有效范围内
+            const validCol = Math.max(0, Math.min(7, col));
+            const validRow = Math.max(0, Math.min(7, row));
+            
+            // 计算格子中心点坐标
+            const centerX = validCol * cellSize + cellSize / 2 + MAZE_CONFIG.wallThickness;
+            const centerY = validRow * cellSize + cellSize / 2 + MAZE_CONFIG.wallThickness;
+            
+            return {
+                x: centerX + offsetX,
+                y: centerY + offsetY,
+                row: validRow,
+                col: validCol
+            };
         }
 
         // 修改 startDrawing 函数
         function startDrawing(e) {
-            isDrawing = true;
             const coords = getCoordinates(e);
-            [startX, startY] = coords;
-            [lastX, lastY] = coords;
+            const [x, y] = coords;
+            
+            // 获取最近的格子中心点
+            const center = getNearestCellCenter(x, y);
+            
+            isDrawing = true;
+            startX = center.x;
+            startY = center.y;
+            lastX = center.x;
+            lastY = center.y;
+            
+            // 绘制起点标记
+            drawEndpoint(drawingCtx, startX, startY, '#ff6b6b');
+        }
+
+        // 修 finishDrawing 函数
+        function finishDrawing(e) {
+            if (!isDrawing) return;
+            
+            const [x, y] = getCoordinates(e);
+            
+            // 获取最近的格子中心点
+            const center = getNearestCellCenter(x, y);
+            const currentX = center.x;
+            const currentY = center.y;
+            
+            // 创建渐变
+            let gradient;
+            const dx = Math.abs(currentX - startX);
+            const dy = Math.abs(currentY - startY);
+            
+            if (dx > dy) {
+                gradient = drawingCtx.createLinearGradient(startX, startY, currentX, startY);
+            } else {
+                gradient = drawingCtx.createLinearGradient(startX, startY, startX, currentY);
+            }
+            gradient.addColorStop(0, '#ff6b6b');
+            gradient.addColorStop(1, '#4a90e2');
+            
+            // 保存当前画布状态
+            drawingCtx.save();
+            
+            drawingCtx.beginPath();
+            drawingCtx.shadowColor = 'rgba(0, 0, 0, 0.2)';
+            drawingCtx.shadowBlur = 4;
+            drawingCtx.shadowOffsetX = 2;
+            drawingCtx.shadowOffsetY = 2;
+            drawingCtx.lineWidth = MAZE_CONFIG.wallThickness;
+            drawingCtx.lineCap = 'round';
+            drawingCtx.lineJoin = 'round';
+            drawingCtx.strokeStyle = gradient;
+            
+            drawingCtx.moveTo(startX, startY);
+            if (dx > dy) {
+                drawingCtx.lineTo(currentX, startY);
+            } else {
+                drawingCtx.lineTo(startX, currentY);
+            }
+            drawingCtx.stroke();
+            drawingCtx.restore();
+            
+            // 在结束点绘制标记
+            drawEndpoint(drawingCtx, currentX, currentY, '#4a90e2');
+            
+            // 清除预览
+            previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+            isDrawing = false;
         }
 
         // 修改 showPreview 函数
         function showPreview(e) {
             if (!isDrawing) return;
             
-            const [currentX, currentY] = getCoordinates(e);
+            const [x, y] = getCoordinates(e);
+            const center = getNearestCellCenter(x, y);
+            const currentX = center.x;
+            const currentY = center.y;
             
             // 清除之前的预览
             previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
             
-            // 计算水平和垂直距离
+            // 创建渐变
+            let gradient;
             const dx = Math.abs(currentX - startX);
             const dy = Math.abs(currentY - startY);
             
+            if (dx > dy) {
+                gradient = previewCtx.createLinearGradient(startX, startY, currentX, startY);
+            } else {
+                gradient = previewCtx.createLinearGradient(startX, startY, startX, currentY);
+            }
+            gradient.addColorStop(0, '#ff6b6b');
+            gradient.addColorStop(1, '#4a90e2');
+            
             previewCtx.beginPath();
-            previewCtx.strokeStyle = MAZE_CONFIG.solveColor;
-            previewCtx.lineWidth = MAZE_CONFIG.wallThickness / 2;
+            previewCtx.shadowColor = 'rgba(0, 0, 0, 0.2)';
+            previewCtx.shadowBlur = 4;
+            previewCtx.shadowOffsetX = 2;
+            previewCtx.shadowOffsetY = 2;
+            previewCtx.lineWidth = MAZE_CONFIG.wallThickness;
             previewCtx.lineCap = 'round';
             previewCtx.lineJoin = 'round';
-            previewCtx.globalAlpha = 0.6; // 添加半透明效果
+            previewCtx.strokeStyle = gradient;
+            previewCtx.globalAlpha = 0.7;
             
             previewCtx.moveTo(startX, startY);
-            
-            // 根据移动距离决定绘制方向
             if (dx > dy) {
-                // 水平线
                 previewCtx.lineTo(currentX, startY);
             } else {
-                // 垂直线
                 previewCtx.lineTo(startX, currentY);
             }
-            
             previewCtx.stroke();
         }
 
-        // 修改 finishDrawing 函数
-        function finishDrawing(e) {
-            if (!isDrawing) return;
-            
-            const [currentX, currentY] = getCoordinates(e);
-            
-            // 计算水平和垂直距离
-            const dx = Math.abs(currentX - startX);
-            const dy = Math.abs(currentY - startY);
-            
-            drawingCtx.beginPath();
-            drawingCtx.strokeStyle = MAZE_CONFIG.solveColor;
-            drawingCtx.lineWidth = MAZE_CONFIG.wallThickness / 2;
-            drawingCtx.lineCap = 'round';
-            drawingCtx.lineJoin = 'round';
-            drawingCtx.globalAlpha = 1.0; // 确保绘制的线条是完全不透明的
-            
-            drawingCtx.moveTo(startX, startY);
-            
-            // 根据移动距离决定绘制方向
-            if (dx > dy) {
-                // 水平线
-                drawingCtx.lineTo(currentX, startY);
-            } else {
-                // 垂直线
-                drawingCtx.lineTo(startX, currentY);
-            }
-            
-            drawingCtx.stroke();
-            
-            // 清除预览
-            previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
-            isDrawing = false;
+        // 添加绘制起点和终点标记的函数
+        function drawEndpoint(ctx, x, y, color) {
+            ctx.beginPath();
+            ctx.fillStyle = color;
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
+            ctx.shadowBlur = 4;
+            ctx.shadowOffsetX = 2;
+            ctx.shadowOffsetY = 2;
+            ctx.arc(x, y, MAZE_CONFIG.wallThickness / 1.5, 0, Math.PI * 2);
+            ctx.fill();
         }
 
         // 修改 initializeMazePieces 函数，在末尾添加：
@@ -1139,6 +1239,9 @@
             mirrorMaze.appendChild(drawingCanvas);
             mirrorMaze.appendChild(previewCanvas);
             
+            // 添加调试用的中心点标记
+            drawCellCenters();
+            
             // 添加事件监听器
             drawingCanvas.addEventListener('mousedown', startDrawing);
             drawingCanvas.addEventListener('mousemove', showPreview);
@@ -1186,6 +1289,37 @@
             }
             if (previewCtx) {
                 previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+            }
+        }
+
+        // 修改绘制所有格子中心点的函数
+        function drawCellCenters() {
+            const mirrorMaze = document.getElementById('mirror-maze');
+            const rect = mirrorMaze.getBoundingClientRect();
+            
+            // 使用与迷宫生成时完全相同的计算方式
+            const margin = 60;
+            const availableSize = Math.min(rect.width, rect.height) - (margin * 2);
+            const cellSize = Math.floor(availableSize / 8);
+            const mazeSize = (cellSize * 8) + MAZE_CONFIG.wallThickness;
+            
+            // 计算居中偏移
+            const offsetX = Math.floor((rect.width - mazeSize) / 2);
+            const offsetY = Math.floor((rect.height - mazeSize) / 2);
+            
+            // 遍历所有格子
+            for(let y = 0; y < 8; y++) {
+                for(let x = 0; x < 8; x++) {
+                    // 计算格子中心点坐标
+                    const centerX = x * cellSize + cellSize / 2 + MAZE_CONFIG.wallThickness;
+                    const centerY = y * cellSize + cellSize / 2 + MAZE_CONFIG.wallThickness;
+                    
+                    // 绘制中心点标记
+                    drawingCtx.beginPath();
+                    drawingCtx.fillStyle = 'rgba(74, 144, 226, 0.5)';
+                    drawingCtx.arc(centerX + offsetX, centerY + offsetY, 3, 0, Math.PI * 2);
+                    drawingCtx.fill();
+                }
             }
         }
     </script>
