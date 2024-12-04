@@ -109,14 +109,16 @@
 
         .container {
             display: flex;
-            flex-direction: column;
+            flex-direction: row;
             align-items: center;
+            justify-content: center;
             width: 100%;
-            max-width: 520px;
+            max-width: 1100px;
             margin: 0 auto;
+            gap: 20px;
         }
 
-        #game {
+        #game, #mirror-maze {
             width: 100%;
             max-width: 520px;
             height: 520px;
@@ -127,7 +129,7 @@
             box-sizing: border-box;
             position: relative;
             overflow: visible;
-            margin: 0 auto;
+            margin: 0;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -280,6 +282,16 @@
         .game_item {
             transition: opacity 0.3s ease;
         }
+
+        @media (max-width: 1200px) {
+            .container {
+                flex-direction: column;
+            }
+            
+            #game, #mirror-maze {
+                margin-bottom: 20px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -307,6 +319,9 @@
     <div class="container">
         <div id="game">
             <!-- 迷宫和数字方块将在这里动态生成 -->
+        </div>
+        <div id="mirror-maze">
+            <!-- 镜像迷宫将在这里动态生成 -->
         </div>
     </div>
 
@@ -522,6 +537,61 @@
                     game.appendChild(gameItem);
                 }
             }
+            
+            // 添加镜像迷宫的生成
+            const mirrorMaze = document.getElementById('mirror-maze');
+            mirrorMaze.innerHTML = '';
+            
+            const mirrorCanvas = document.createElement('canvas');
+            mirrorCanvas.width = 520;
+            mirrorCanvas.height = 520;
+            const mirrorCtx = mirrorCanvas.getContext('2d');
+            
+            // 设置背景
+            mirrorCtx.fillStyle = MAZE_CONFIG.backgroundColor;
+            mirrorCtx.fillRect(0, 0, mirrorCanvas.width, mirrorCanvas.height);
+            
+            // 使用相同的计算方式，但使用不同的变量名
+            const mirrorMargin = 60;
+            const mirrorAvailableSize = Math.min(mirrorCanvas.width, mirrorCanvas.height) - (mirrorMargin * 2);
+            const mirrorCellSize = Math.floor(mirrorAvailableSize / 8);
+            const mirrorMazeSize = (mirrorCellSize * 8) + MAZE_CONFIG.wallThickness;
+            
+            // 计算居中偏移
+            const mirrorOffsetX = Math.floor((mirrorCanvas.width - mirrorMazeSize) / 2);
+            const mirrorOffsetY = Math.floor((mirrorCanvas.height - mirrorMazeSize) / 2);
+            
+            // 移动到绘制起点
+            mirrorCtx.translate(mirrorOffsetX, mirrorOffsetY);
+            
+            // 在绘制镜像迷宫的外边框之前添加颜色设置
+            mirrorCtx.fillStyle = MAZE_CONFIG.mazeColor;
+            
+            // 绘制镜像迷宫的外边框 - 不再清除入口和出口
+            mirrorCtx.fillRect(0, 0, mirrorMazeSize, MAZE_CONFIG.wallThickness); // 上边框 - 完整
+            mirrorCtx.fillRect(0, 0, MAZE_CONFIG.wallThickness, mirrorMazeSize); // 左边框
+            mirrorCtx.fillRect(mirrorMazeSize - MAZE_CONFIG.wallThickness, 0, MAZE_CONFIG.wallThickness, mirrorMazeSize); // 右边框
+            mirrorCtx.fillRect(0, mirrorMazeSize - MAZE_CONFIG.wallThickness, mirrorMazeSize, MAZE_CONFIG.wallThickness); // 下边框 - 完整
+            
+            // 绘制内部墙壁
+            for(let y = 0; y < 8; y++) {
+                for(let x = 0; x < 8; x++) {
+                    const cell = currentMaze[y][x];
+                    const px = x * mirrorCellSize;
+                    const py = y * mirrorCellSize;
+                    
+                    // 对于镜像迷宫，始终绘制北墙和南墙
+                    mirrorCtx.fillStyle = MAZE_CONFIG.mazeColor;
+                    mirrorCtx.fillRect(px, py, mirrorCellSize + MAZE_CONFIG.wallThickness, MAZE_CONFIG.wallThickness);
+                    mirrorCtx.fillRect(px, py + mirrorCellSize, mirrorCellSize + MAZE_CONFIG.wallThickness, MAZE_CONFIG.wallThickness);
+                    
+                    // 对于镜像迷宫，始终绘制东墙和西墙
+                    mirrorCtx.fillRect(px, py, MAZE_CONFIG.wallThickness, mirrorCellSize + MAZE_CONFIG.wallThickness);
+                    mirrorCtx.fillRect(px + mirrorCellSize, py, MAZE_CONFIG.wallThickness, mirrorCellSize + MAZE_CONFIG.wallThickness);
+                }
+            }
+            
+            mirrorMaze.appendChild(mirrorCanvas);
         }
 
         // 页面加载时初始化迷宫
@@ -532,7 +602,7 @@
 
         // 新游戏按钮点击事件
         function startNewGame() {
-            currentMaze = generateMaze(); // ��始新游戏时生成新迷宫
+            currentMaze = generateMaze(); // 始新游戏时生成新迷宫
             initializeMazePieces();
         }
 
@@ -734,6 +804,28 @@
                 });
             };
             game.appendChild(backButton);
+            
+            // 在镜像迷宫上也显示解决路径
+            const mirrorCanvas = document.querySelector('#mirror-maze canvas');
+            if (mirrorCanvas) {
+                const mirrorCtx = mirrorCanvas.getContext('2d');
+                if (path && path.length > 0) {
+                    mirrorCtx.beginPath();
+                    mirrorCtx.strokeStyle = MAZE_CONFIG.solveColor;
+                    mirrorCtx.lineWidth = MAZE_CONFIG.wallThickness / 2;
+                    mirrorCtx.lineCap = 'round';
+                    mirrorCtx.lineJoin = 'round';
+                    
+                    const [firstX, firstY] = path[0];
+                    mirrorCtx.moveTo(firstX * mirrorCellSize + mirrorCellSize/2, firstY * mirrorCellSize + mirrorCellSize/2);
+                    
+                    for (const [x, y] of path) {
+                        mirrorCtx.lineTo(x * mirrorCellSize + mirrorCellSize/2, y * mirrorCellSize + mirrorCellSize/2);
+                    }
+                    
+                    mirrorCtx.stroke();
+                }
+            }
         }
 
         // 在全局作用域添加变量
