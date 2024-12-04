@@ -292,6 +292,27 @@
                 margin-bottom: 20px;
             }
         }
+
+        #mirror-maze {
+            position: relative;
+            overflow: hidden;
+        }
+
+        #mirror-maze canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .controls {
+            gap: 10px;
+            flex-wrap: wrap;
+            max-width: 500px;
+        }
+
+        .btn {
+            min-width: 90px;
+        }
     </style>
 </head>
 <body>
@@ -505,7 +526,7 @@
             const blockSize = Math.floor(puzzleSize / 4); // 每个方块的大小
             const blockMargin = 0; // 移除方块间距
             
-            // 计算华容道的起始位置，考虑画布偏移和边距
+            // 计算华容道的起始位��，考虑画布偏移和边距
             const puzzleStartX = canvasOffsetX + offsetX - (MAZE_CONFIG.wallThickness / 2); // 更多地向移动
             const puzzleStartY = canvasOffsetY + offsetY - (MAZE_CONFIG.wallThickness / 2); // 更多地向上移动
 
@@ -962,6 +983,211 @@
             }
         `;
         document.head.appendChild(styleElement);
+
+        // 添加新的变量
+        let startX = 0;
+        let startY = 0;
+        let previewCtx = null;
+        let previewCanvas = null;
+
+        // 在 initializeDrawing 函数之前添加以下变量声明
+        let isDrawing = false;
+        let lastX = 0;
+        let lastY = 0;
+        let drawingCtx = null;
+        let drawingCanvas = null;
+
+        // 添加 getCoordinates 函数
+        function getCoordinates(e) {
+            const rect = drawingCanvas.getBoundingClientRect();
+            const scaleX = drawingCanvas.width / rect.width;
+            const scaleY = drawingCanvas.height / rect.height;
+            
+            if (e.type.includes('touch')) {
+                return [
+                    (e.touches[0].clientX - rect.left) * scaleX,
+                    (e.touches[0].clientY - rect.top) * scaleY
+                ];
+            }
+            return [
+                (e.clientX - rect.left) * scaleX,
+                (e.clientY - rect.top) * scaleY
+            ];
+        }
+
+        // 修改 startDrawing 函数
+        function startDrawing(e) {
+            isDrawing = true;
+            const coords = getCoordinates(e);
+            [startX, startY] = coords;
+            [lastX, lastY] = coords;
+        }
+
+        // 修改 showPreview 函数
+        function showPreview(e) {
+            if (!isDrawing) return;
+            
+            const [currentX, currentY] = getCoordinates(e);
+            
+            // 清除之前的预览
+            previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+            
+            // 计算水平和垂直距离
+            const dx = Math.abs(currentX - startX);
+            const dy = Math.abs(currentY - startY);
+            
+            previewCtx.beginPath();
+            previewCtx.strokeStyle = MAZE_CONFIG.solveColor;
+            previewCtx.lineWidth = MAZE_CONFIG.wallThickness / 2;
+            previewCtx.lineCap = 'round';
+            previewCtx.lineJoin = 'round';
+            previewCtx.globalAlpha = 0.6; // 添加半透明效果
+            
+            previewCtx.moveTo(startX, startY);
+            
+            // 根据移动距离决定绘制方向
+            if (dx > dy) {
+                // 水平线
+                previewCtx.lineTo(currentX, startY);
+            } else {
+                // 垂直线
+                previewCtx.lineTo(startX, currentY);
+            }
+            
+            previewCtx.stroke();
+        }
+
+        // 修改 finishDrawing 函数
+        function finishDrawing(e) {
+            if (!isDrawing) return;
+            
+            const [currentX, currentY] = getCoordinates(e);
+            
+            // 计算水平和垂直距离
+            const dx = Math.abs(currentX - startX);
+            const dy = Math.abs(currentY - startY);
+            
+            drawingCtx.beginPath();
+            drawingCtx.strokeStyle = MAZE_CONFIG.solveColor;
+            drawingCtx.lineWidth = MAZE_CONFIG.wallThickness / 2;
+            drawingCtx.lineCap = 'round';
+            drawingCtx.lineJoin = 'round';
+            drawingCtx.globalAlpha = 1.0; // 确保绘制的线条是完全不透明的
+            
+            drawingCtx.moveTo(startX, startY);
+            
+            // 根据移动距离决定绘制方向
+            if (dx > dy) {
+                // 水平线
+                drawingCtx.lineTo(currentX, startY);
+            } else {
+                // 垂直线
+                drawingCtx.lineTo(startX, currentY);
+            }
+            
+            drawingCtx.stroke();
+            
+            // 清除预览
+            previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+            isDrawing = false;
+        }
+
+        // 修改 initializeMazePieces 函数，在末尾添加：
+        const originalInitializeMazePieces = initializeMazePieces;
+        initializeMazePieces = function() {
+            originalInitializeMazePieces();
+            clearDrawing();
+            initializeDrawing();
+        }
+
+        // 修改控制按钮区域，添加清除绘图按钮
+        const controlsDiv = document.querySelector('.controls');
+        const clearButton = document.createElement('button');
+        clearButton.className = 'btn btn-new';
+        clearButton.innerText = '清除绘图';
+        clearButton.onclick = clearDrawing;
+        controlsDiv.appendChild(clearButton);
+
+        // 页面加载完成后初始化绘图功能
+        window.addEventListener('load', initializeDrawing);
+
+        // 添加初始化绘图功能函数
+        function initializeDrawing() {
+            const mirrorMaze = document.getElementById('mirror-maze');
+            
+            // 创建绘图层
+            drawingCanvas = document.createElement('canvas');
+            drawingCanvas.width = 520;
+            drawingCanvas.height = 520;
+            drawingCanvas.style.position = 'absolute';
+            drawingCanvas.style.top = '0';
+            drawingCanvas.style.left = '0';
+            drawingCanvas.style.pointerEvents = 'all';
+            drawingCanvas.style.cursor = 'crosshair';
+            drawingCtx = drawingCanvas.getContext('2d');
+            
+            // 创建预览层
+            previewCanvas = document.createElement('canvas');
+            previewCanvas.width = 520;
+            previewCanvas.height = 520;
+            previewCanvas.style.position = 'absolute';
+            previewCanvas.style.top = '0';
+            previewCanvas.style.left = '0';
+            previewCanvas.style.pointerEvents = 'none';
+            previewCtx = previewCanvas.getContext('2d');
+            
+            mirrorMaze.appendChild(drawingCanvas);
+            mirrorMaze.appendChild(previewCanvas);
+            
+            // 添加事件监听器
+            drawingCanvas.addEventListener('mousedown', startDrawing);
+            drawingCanvas.addEventListener('mousemove', showPreview);
+            drawingCanvas.addEventListener('mouseup', finishDrawing);
+            drawingCanvas.addEventListener('mouseout', cancelDrawing);
+            
+            // 触摸设备支持
+            drawingCanvas.addEventListener('touchstart', handleTouchStart);
+            drawingCanvas.addEventListener('touchmove', handleTouchMove);
+            drawingCanvas.addEventListener('touchend', finishDrawing);
+        }
+
+        // 添加取消绘制函数
+        function cancelDrawing() {
+            if (!isDrawing) return;
+            previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+            isDrawing = false;
+        }
+
+        // 添加触摸事件处理函数
+        function handleTouchStart(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousedown', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            startDrawing(mouseEvent);
+        }
+
+        function handleTouchMove(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousemove', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            showPreview(mouseEvent);
+        }
+
+        // 添加清除绘图功能
+        function clearDrawing() {
+            if (drawingCtx) {
+                drawingCtx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+            }
+            if (previewCtx) {
+                previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+            }
+        }
     </script>
 </body>
 </html> 
