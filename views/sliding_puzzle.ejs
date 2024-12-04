@@ -160,7 +160,7 @@
         .game_item {
             position: absolute;
             z-index: 2;
-            border-radius: 8px;
+            border-radius: 0;
             background: linear-gradient(135deg, #67a6e5, #4a90e2);
             color: white;
             text-align: center;
@@ -168,7 +168,7 @@
             user-select: none;
             font-weight: bold;
             transition: transform 0.2s ease;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            box-shadow: none;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -178,6 +178,11 @@
             background: transparent;
             box-shadow: none;
             pointer-events: none;
+            opacity: 0;
+        }
+
+        .game_item {
+            z-index: 3;
         }
 
         @media (max-width: 480px) {
@@ -270,6 +275,10 @@
                 transform: translate(var(--tx), var(--ty)) scale(0);
                 opacity: 0;
             }
+        }
+
+        .game_item {
+            transition: opacity 0.3s ease;
         }
     </style>
 </head>
@@ -468,21 +477,21 @@
             
             game.appendChild(canvas);
             
-            // 获取画布的实际渲染尺寸
+            // 取画布的实际渲染尺寸
             const canvasRect = canvas.getBoundingClientRect();
             const gameRect = game.getBoundingClientRect();
             
-            // 计算画布相对于游戏容器的偏移
+            // 计画布相对于游戏容器的偏移
             const canvasOffsetX = canvasRect.left - gameRect.left;
             const canvasOffsetY = canvasRect.top - gameRect.top;
             
             // 重新计算华容道的大小和位置
-            const puzzleSize = mazeSize - (MAZE_CONFIG.wallThickness * 2); // 减去左右两边墙的厚度
+            const puzzleSize = mazeSize - (MAZE_CONFIG.wallThickness * 2); // 减去左右两墙的厚度
             const blockSize = Math.floor(puzzleSize / 4); // 每个方块的大小
-            const blockMargin = Math.floor(blockSize * 0.02); // 减小方块间距
+            const blockMargin = 0; // 移除方块间距
             
             // 计算华容道的起始位置，考虑画布偏移和边距
-            const puzzleStartX = canvasOffsetX + offsetX - (MAZE_CONFIG.wallThickness / 2); // 更多地向左移动
+            const puzzleStartX = canvasOffsetX + offsetX - (MAZE_CONFIG.wallThickness / 2); // 更多地向移动
             const puzzleStartY = canvasOffsetY + offsetY - (MAZE_CONFIG.wallThickness / 2); // 更多地向上移动
 
             // 清除现有的方块
@@ -505,9 +514,9 @@
                     // 设置方块样式
                     gameItem.style.left = left + 'px';
                     gameItem.style.top = top + 'px';
-                    gameItem.style.width = (blockSize - blockMargin) + 'px';
-                    gameItem.style.height = (blockSize - blockMargin) + 'px';
-                    gameItem.style.lineHeight = (blockSize - blockMargin) + 'px';
+                    gameItem.style.width = blockSize + 'px'; // 移除 margin 的减法
+                    gameItem.style.height = blockSize + 'px';
+                    gameItem.style.lineHeight = blockSize + 'px';
                     gameItem.style.fontSize = Math.floor(blockSize * 0.4) + 'px'; // 动态调整字体大小
                     
                     game.appendChild(gameItem);
@@ -523,7 +532,7 @@
 
         // 新游戏按钮点击事件
         function startNewGame() {
-            currentMaze = generateMaze(); // 开始新游戏时生成新迷宫
+            currentMaze = generateMaze(); // ��始新游戏时生成新迷宫
             initializeMazePieces();
         }
 
@@ -611,42 +620,120 @@
                 return;
             }
             
+            // 完全隐藏华容道方块
+            const gameItems = document.querySelectorAll('.game_item');
+            gameItems.forEach(item => {
+                item.style.display = 'none';
+            });
+            
             const game = document.getElementById('game');
             const canvas = game.querySelector('canvas');
             const ctx = canvas.getContext('2d');
             
-            // 获取当前迷宫的解决路径
+            // 获取当前画布的变换状态
+            const currentTransform = ctx.getTransform();
+            
+            // 清除画布
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 设置背景
+            ctx.fillStyle = MAZE_CONFIG.backgroundColor;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // 使用当前的变换状态
+            ctx.setTransform(currentTransform);
+            
+            // 绘制迷宫墙壁
+            ctx.fillStyle = MAZE_CONFIG.mazeColor;
+            
+            // 使用与初始化时相同的尺寸
+            const margin = 60;
+            const availableSize = Math.min(canvas.width, canvas.height) - (margin * 2);
+            const cellSize = Math.floor(availableSize / 8);
+            const mazeSize = (cellSize * 8) + MAZE_CONFIG.wallThickness;
+            
+            // 绘制外边框
+            ctx.fillRect(0, 0, mazeSize, MAZE_CONFIG.wallThickness);
+            ctx.fillRect(0, 0, MAZE_CONFIG.wallThickness, mazeSize);
+            ctx.fillRect(mazeSize - MAZE_CONFIG.wallThickness, 0, MAZE_CONFIG.wallThickness, mazeSize);
+            ctx.fillRect(0, mazeSize - MAZE_CONFIG.wallThickness, mazeSize, MAZE_CONFIG.wallThickness);
+            
+            // 绘制内部墙壁
+            for(let y = 0; y < 8; y++) {
+                for(let x = 0; x < 8; x++) {
+                    const cell = currentMaze[y][x];
+                    const px = x * cellSize;
+                    const py = y * cellSize;
+                    
+                    if (cell & MAZE.N) {
+                        ctx.fillRect(px, py, cellSize + MAZE_CONFIG.wallThickness, MAZE_CONFIG.wallThickness);
+                    }
+                    if (cell & MAZE.W) {
+                        ctx.fillRect(px, py, MAZE_CONFIG.wallThickness, cellSize + MAZE_CONFIG.wallThickness);
+                    }
+                    if (x === 7 || (cell & MAZE.E)) {
+                        ctx.fillRect(px + cellSize, py, MAZE_CONFIG.wallThickness, cellSize + MAZE_CONFIG.wallThickness);
+                    }
+                    if (y === 7 || (cell & MAZE.S)) {
+                        ctx.fillRect(px, py + cellSize, cellSize + MAZE_CONFIG.wallThickness, MAZE_CONFIG.wallThickness);
+                    }
+                }
+            }
+            
+            // 清除入口和出口
+            ctx.clearRect(0, 0, cellSize, MAZE_CONFIG.wallThickness);
+            ctx.clearRect(mazeSize - cellSize - MAZE_CONFIG.wallThickness, 
+                         mazeSize - MAZE_CONFIG.wallThickness, 
+                         cellSize + MAZE_CONFIG.wallThickness, 
+                         MAZE_CONFIG.wallThickness);
+            
+            // 添加入口和出口标记
+            ctx.beginPath();
+            ctx.fillStyle = MAZE_CONFIG.startColor;
+            ctx.arc(cellSize/2, MAZE_CONFIG.wallThickness/2, MAZE_CONFIG.wallThickness, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.fillStyle = MAZE_CONFIG.endColor;
+            ctx.arc(mazeSize - cellSize/2 - MAZE_CONFIG.wallThickness, 
+                    mazeSize - MAZE_CONFIG.wallThickness/2, 
+                    MAZE_CONFIG.wallThickness, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 获取并绘制解决路径
             const path = findPath(currentMaze);
             
             if (path && path.length > 0) {
-                const margin = 60;
-                const availableSize = Math.min(canvas.width, canvas.height) - (margin * 2);
-                const cellSize = Math.floor(availableSize / 8);
-                const mazeSize = (cellSize * 8) + MAZE_CONFIG.wallThickness;
-                const offsetX = Math.floor((canvas.width - mazeSize) / 2);
-                const offsetY = Math.floor((canvas.height - mazeSize) / 2);
-                
-                // 设置路径样式
-                ctx.save();
-                ctx.translate(offsetX, offsetY);
                 ctx.beginPath();
                 ctx.strokeStyle = MAZE_CONFIG.solveColor;
                 ctx.lineWidth = MAZE_CONFIG.wallThickness / 2;
                 ctx.lineCap = 'round';
                 ctx.lineJoin = 'round';
                 
-                // 移动到起点
                 const [firstX, firstY] = path[0];
                 ctx.moveTo(firstX * cellSize + cellSize/2, firstY * cellSize + cellSize/2);
                 
-                // 绘制路径
                 for (const [x, y] of path) {
                     ctx.lineTo(x * cellSize + cellSize/2, y * cellSize + cellSize/2);
                 }
                 
                 ctx.stroke();
-                ctx.restore();
             }
+            
+            // 添加返回按钮
+            const backButton = document.createElement('button');
+            backButton.className = 'btn btn-new';
+            backButton.style.position = 'absolute';
+            backButton.style.top = '20px';
+            backButton.style.right = '20px';
+            backButton.innerText = '返回游戏';
+            backButton.onclick = function() {
+                backButton.remove();
+                gameItems.forEach(item => {
+                    item.style.display = 'flex';
+                });
+            };
+            game.appendChild(backButton);
         }
 
         // 在全局作用域添加变量
@@ -774,6 +861,15 @@
                 initializeMazePieces();
             }, 250);
         });
+
+        // 修改 CSS 样式，添加过渡效果
+        const styleElement = document.createElement('style');
+        styleElement.textContent = `
+            .game_item {
+                transition: opacity 0.3s ease;
+            }
+        `;
+        document.head.appendChild(styleElement);
     </script>
 </body>
 </html> 
