@@ -460,7 +460,7 @@
             canvas.height = 520;
             const ctx = canvas.getContext('2d');
             
-            // 生成���存迷宫
+            // 生成存迷宫
             currentMaze = generateMaze();  // 保存到全局变量
             
             // 设置背景
@@ -1114,7 +1114,7 @@
             const offsetX = Math.floor((rect.width - mazeSize) / 2);
             const offsetY = Math.floor((rect.height - mazeSize) / 2);
             
-            // 计算格子索引（考虑第一个格���的度）
+            // 计算格子索引（考虑第一个格的度）
             const col = Math.floor((x - MAZE_CONFIG.wallThickness) / cellSize);
             const row = Math.floor((y - MAZE_CONFIG.wallThickness) / cellSize);
             
@@ -1134,15 +1134,15 @@
             };
         }
 
+        // 添加一个变量来存储上一个绘制点
+        let lastDrawnPoint = null;
+
         // 修改 startDrawing 函数
         function startDrawing(e) {
-            // 阻止默认行为
             e.preventDefault();
             
             const coords = getCoordinates(e);
             const [x, y] = coords;
-            
-            // 获取最近的格子中心点
             const center = getNearestCellCenter(x, y);
             
             isDrawing = true;
@@ -1150,56 +1150,18 @@
             startY = center.y;
             lastX = center.x;
             lastY = center.y;
+            lastDrawnPoint = { x: center.x, y: center.y };
         }
 
         // 添加一个全局变量来存储所有绘制的线段
         let drawnLines = [];
 
-        // 修改 finishDrawing 函数，添加线段记录
+        // 修改 finishDrawing 函数
         function finishDrawing(e) {
             if (!isDrawing) return;
-            
-            const [x, y] = getCoordinates(e);
-            const center = getNearestCellCenter(x, y);
-            const currentX = center.x;
-            const currentY = center.y;
-            
-            const dx = Math.abs(currentX - startX);
-            const dy = Math.abs(currentY - startY);
-            
-            // 记录新绘制的线段
-            const line = {
-                x1: startX,
-                y1: startY,
-                x2: dx > dy ? currentX : startX,
-                y2: dx > dy ? startY : currentY,
-                isHorizontal: dx > dy
-            };
-            drawnLines.push(line);
-            
-            // 绘制线段
-            drawingCtx.save();
-            drawingCtx.beginPath();
-            drawingCtx.shadowColor = 'rgba(0, 0, 0, 0.2)';
-            drawingCtx.shadowBlur = 4;
-            drawingCtx.shadowOffsetX = 2;
-            drawingCtx.shadowOffsetY = 2;
-            drawingCtx.lineWidth = MAZE_CONFIG.wallThickness;
-            drawingCtx.lineCap = 'round';
-            drawingCtx.lineJoin = 'round';
-            drawingCtx.strokeStyle = '#4a90e2';
-            
-            drawingCtx.moveTo(line.x1, line.y1);
-            drawingCtx.lineTo(line.x2, line.y2);
-            drawingCtx.stroke();
-            drawingCtx.restore();
-            
-            // 移除端点标记的绘制
-            // drawEndpoint(drawingCtx, startX, startY, '#ff6b6b');
-            // drawEndpoint(drawingCtx, currentX, currentY, '#4a90e2');
-            
-            previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
             isDrawing = false;
+            lastDrawnPoint = null;
+            previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
         }
 
         // 修改 handleDoubleClick 函数
@@ -1252,7 +1214,7 @@
                     drawingCtx.stroke();
                 });
                 
-                // 最后重新绘制所有中心点
+                // 最后重新绘制所有��心点
                 drawCellCenters();
             }
         }
@@ -1469,30 +1431,66 @@
             const currentX = center.x;
             const currentY = center.y;
             
+            // 如果移动到了新的格子中心点
+            if (currentX !== lastX || currentY !== lastY) {
+                // 检查是否可以画线（水平或垂直）
+                const dx = Math.abs(currentX - lastX);
+                const dy = Math.abs(currentY - lastY);
+                
+                if (dx === 0 || dy === 0) { // 只允许水平或垂直线
+                    // 绘制实际的线段
+                    const line = {
+                        x1: lastX,
+                        y1: lastY,
+                        x2: currentX,
+                        y2: currentY,
+                        isHorizontal: dx > dy
+                    };
+                    drawnLines.push(line);
+                    
+                    drawingCtx.beginPath();
+                    drawingCtx.shadowColor = 'rgba(0, 0, 0, 0.2)';
+                    drawingCtx.shadowBlur = 4;
+                    drawingCtx.shadowOffsetX = 2;
+                    drawingCtx.shadowOffsetY = 2;
+                    drawingCtx.lineWidth = MAZE_CONFIG.wallThickness;
+                    drawingCtx.lineCap = 'round';
+                    drawingCtx.lineJoin = 'round';
+                    drawingCtx.strokeStyle = '#4a90e2';
+                    
+                    drawingCtx.moveTo(line.x1, line.y1);
+                    drawingCtx.lineTo(line.x2, line.y2);
+                    drawingCtx.stroke();
+                    
+                    // 更新最后的位置
+                    lastX = currentX;
+                    lastY = currentY;
+                }
+            }
+            
             // 清除之前的预览
             previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
             
-            previewCtx.beginPath();
-            previewCtx.shadowColor = 'rgba(0, 0, 0, 0.2)';
-            previewCtx.shadowBlur = 4;
-            previewCtx.shadowOffsetX = 2;
-            previewCtx.shadowOffsetY = 2;
-            previewCtx.lineWidth = MAZE_CONFIG.wallThickness;
-            previewCtx.lineCap = 'round';
-            previewCtx.lineJoin = 'round';
-            // 使用单一颜色替代渐变
-            previewCtx.strokeStyle = '#4a90e2';
-            previewCtx.globalAlpha = 0.7;
+            // 绘制预览线
+            const dx = Math.abs(currentX - lastX);
+            const dy = Math.abs(currentY - lastY);
             
-            previewCtx.moveTo(startX, startY);
-            const dx = Math.abs(currentX - startX);
-            const dy = Math.abs(currentY - startY);
-            if (dx > dy) {
-                previewCtx.lineTo(currentX, startY);
-            } else {
-                previewCtx.lineTo(startX, currentY);
+            if (dx === 0 || dy === 0) { // 只显示水平或垂直的预览线
+                previewCtx.beginPath();
+                previewCtx.shadowColor = 'rgba(0, 0, 0, 0.2)';
+                previewCtx.shadowBlur = 4;
+                previewCtx.shadowOffsetX = 2;
+                previewCtx.shadowOffsetY = 2;
+                previewCtx.lineWidth = MAZE_CONFIG.wallThickness;
+                previewCtx.lineCap = 'round';
+                previewCtx.lineJoin = 'round';
+                previewCtx.strokeStyle = '#4a90e2';
+                previewCtx.globalAlpha = 0.7;
+                
+                previewCtx.moveTo(lastX, lastY);
+                previewCtx.lineTo(currentX, currentY);
+                previewCtx.stroke();
             }
-            previewCtx.stroke();
         }
     </script>
 </body>
