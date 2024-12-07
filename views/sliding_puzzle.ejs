@@ -460,7 +460,7 @@
             canvas.height = 520;
             const ctx = canvas.getContext('2d');
             
-            // 生成并保存迷宫
+            // 生成���存迷宫
             currentMaze = generateMaze();  // 保存到全局变量
             
             // 设置背景
@@ -1114,7 +1114,7 @@
             const offsetX = Math.floor((rect.width - mazeSize) / 2);
             const offsetY = Math.floor((rect.height - mazeSize) / 2);
             
-            // 计算格子索引（考虑第一个边框的宽度）
+            // 计算格子索引（考虑第一个格���的度）
             const col = Math.floor((x - MAZE_CONFIG.wallThickness) / cellSize);
             const row = Math.floor((y - MAZE_CONFIG.wallThickness) / cellSize);
             
@@ -1136,6 +1136,9 @@
 
         // 修改 startDrawing 函数
         function startDrawing(e) {
+            // 阻止默认行为
+            e.preventDefault();
+            
             const coords = getCoordinates(e);
             const [x, y] = coords;
             
@@ -1147,38 +1150,35 @@
             startY = center.y;
             lastX = center.x;
             lastY = center.y;
-            
-            // 绘制起点标记
-            drawEndpoint(drawingCtx, startX, startY, '#ff6b6b');
         }
 
-        // 修 finishDrawing 函数
+        // 添加一个全局变量来存储所有绘制的线段
+        let drawnLines = [];
+
+        // 修改 finishDrawing 函数，添加线段记录
         function finishDrawing(e) {
             if (!isDrawing) return;
             
             const [x, y] = getCoordinates(e);
-            
-            // 获取最近的格子中心点
             const center = getNearestCellCenter(x, y);
             const currentX = center.x;
             const currentY = center.y;
             
-            // 创建渐变
-            let gradient;
             const dx = Math.abs(currentX - startX);
             const dy = Math.abs(currentY - startY);
             
-            if (dx > dy) {
-                gradient = drawingCtx.createLinearGradient(startX, startY, currentX, startY);
-            } else {
-                gradient = drawingCtx.createLinearGradient(startX, startY, startX, currentY);
-            }
-            gradient.addColorStop(0, '#ff6b6b');
-            gradient.addColorStop(1, '#4a90e2');
+            // 记录新绘制的线段
+            const line = {
+                x1: startX,
+                y1: startY,
+                x2: dx > dy ? currentX : startX,
+                y2: dx > dy ? startY : currentY,
+                isHorizontal: dx > dy
+            };
+            drawnLines.push(line);
             
-            // 保存当前画布状态
+            // 绘制线段
             drawingCtx.save();
-            
             drawingCtx.beginPath();
             drawingCtx.shadowColor = 'rgba(0, 0, 0, 0.2)';
             drawingCtx.shadowBlur = 4;
@@ -1187,80 +1187,155 @@
             drawingCtx.lineWidth = MAZE_CONFIG.wallThickness;
             drawingCtx.lineCap = 'round';
             drawingCtx.lineJoin = 'round';
-            drawingCtx.strokeStyle = gradient;
+            drawingCtx.strokeStyle = '#4a90e2';
             
-            drawingCtx.moveTo(startX, startY);
-            if (dx > dy) {
-                drawingCtx.lineTo(currentX, startY);
-            } else {
-                drawingCtx.lineTo(startX, currentY);
-            }
+            drawingCtx.moveTo(line.x1, line.y1);
+            drawingCtx.lineTo(line.x2, line.y2);
             drawingCtx.stroke();
             drawingCtx.restore();
             
-            // 在结束点绘制标记
-            drawEndpoint(drawingCtx, currentX, currentY, '#4a90e2');
+            // 移除端点标记的绘制
+            // drawEndpoint(drawingCtx, startX, startY, '#ff6b6b');
+            // drawEndpoint(drawingCtx, currentX, currentY, '#4a90e2');
             
-            // 清除预览
             previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
             isDrawing = false;
         }
 
-        // 修改 showPreview 函数
-        function showPreview(e) {
-            if (!isDrawing) return;
-            
+        // 修改 handleDoubleClick 函数
+        function handleDoubleClick(e) {
             const [x, y] = getCoordinates(e);
             const center = getNearestCellCenter(x, y);
-            const currentX = center.x;
-            const currentY = center.y;
+            const clickX = center.x;
+            const clickY = center.y;
             
-            // 清除之前的预览
-            previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+            // 查找被点击的线段
+            const clickedLineIndex = drawnLines.findIndex(line => {
+                if (line.isHorizontal) {
+                    // 水平线段：检查 Y 坐标是否匹配，以及 X 坐标是否在范围内
+                    const minX = Math.min(line.x1, line.x2);
+                    const maxX = Math.max(line.x1, line.x2);
+                    return Math.abs(clickY - line.y1) <= MAZE_CONFIG.wallThickness &&
+                           clickX >= minX - MAZE_CONFIG.wallThickness &&
+                           clickX <= maxX + MAZE_CONFIG.wallThickness;
+                } else {
+                    // 垂直线段：检查 X 坐标是否匹配，以及 Y 坐标是否在范围内
+                    const minY = Math.min(line.y1, line.y2);
+                    const maxY = Math.max(line.y1, line.y2);
+                    return Math.abs(clickX - line.x1) <= MAZE_CONFIG.wallThickness &&
+                           clickY >= minY - MAZE_CONFIG.wallThickness &&
+                           clickY <= maxY + MAZE_CONFIG.wallThickness;
+                }
+            });
             
-            // 创建渐变
-            let gradient;
-            const dx = Math.abs(currentX - startX);
-            const dy = Math.abs(currentY - startY);
-            
-            if (dx > dy) {
-                gradient = previewCtx.createLinearGradient(startX, startY, currentX, startY);
-            } else {
-                gradient = previewCtx.createLinearGradient(startX, startY, startX, currentY);
+            if (clickedLineIndex !== -1) {
+                // 删除找到的线段
+                drawnLines.splice(clickedLineIndex, 1);
+                
+                // 清除画布
+                drawingCtx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+                
+                // 重新绘制所有保留的线段
+                drawnLines.forEach(line => {
+                    drawingCtx.beginPath();
+                    drawingCtx.shadowColor = 'rgba(0, 0, 0, 0.2)';
+                    drawingCtx.shadowBlur = 4;
+                    drawingCtx.shadowOffsetX = 2;
+                    drawingCtx.shadowOffsetY = 2;
+                    drawingCtx.lineWidth = MAZE_CONFIG.wallThickness;
+                    drawingCtx.lineCap = 'round';
+                    drawingCtx.lineJoin = 'round';
+                    drawingCtx.strokeStyle = '#4a90e2';
+                    
+                    drawingCtx.moveTo(line.x1, line.y1);
+                    drawingCtx.lineTo(line.x2, line.y2);
+                    drawingCtx.stroke();
+                });
+                
+                // 最后重新绘制所有中心点
+                drawCellCenters();
             }
-            gradient.addColorStop(0, '#ff6b6b');
-            gradient.addColorStop(1, '#4a90e2');
-            
-            previewCtx.beginPath();
-            previewCtx.shadowColor = 'rgba(0, 0, 0, 0.2)';
-            previewCtx.shadowBlur = 4;
-            previewCtx.shadowOffsetX = 2;
-            previewCtx.shadowOffsetY = 2;
-            previewCtx.lineWidth = MAZE_CONFIG.wallThickness;
-            previewCtx.lineCap = 'round';
-            previewCtx.lineJoin = 'round';
-            previewCtx.strokeStyle = gradient;
-            previewCtx.globalAlpha = 0.7;
-            
-            previewCtx.moveTo(startX, startY);
-            if (dx > dy) {
-                previewCtx.lineTo(currentX, startY);
-            } else {
-                previewCtx.lineTo(startX, currentY);
-            }
-            previewCtx.stroke();
         }
 
-        // 添加绘制起点和终点标记的函数
-        function drawEndpoint(ctx, x, y, color) {
-            ctx.beginPath();
-            ctx.fillStyle = color;
-            ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
-            ctx.shadowBlur = 4;
-            ctx.shadowOffsetX = 2;
-            ctx.shadowOffsetY = 2;
-            ctx.arc(x, y, MAZE_CONFIG.wallThickness / 1.5, 0, Math.PI * 2);
-            ctx.fill();
+        // 修改 clearDrawing 函数
+        function clearDrawing() {
+            if (drawingCtx) {
+                drawingCtx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+                drawCellCenters();
+                // 清空线段数组
+                drawnLines = [];
+            }
+            
+            if (previewCtx) {
+                previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+            }
+        }
+
+        // 修改 drawCellCenters 函数
+        function drawCellCenters() {
+            if (!drawingCtx) return;
+            
+            const mirrorMaze = document.getElementById('mirror-maze');
+            const rect = mirrorMaze.getBoundingClientRect();
+            
+            const margin = 60;
+            const availableSize = Math.min(520, 520) - (margin * 2);
+            const cellSize = Math.floor(availableSize / 8);
+            const mazeSize = (cellSize * 8) + MAZE_CONFIG.wallThickness;
+            
+            const offsetX = Math.floor((520 - mazeSize) / 2);
+            const offsetY = Math.floor((520 - mazeSize) / 2);
+            
+            // 遍历所有格子
+            for(let y = 0; y < 8; y++) {
+                for(let x = 0; x < 8; x++) {
+                    const centerX = x * cellSize + cellSize / 2 + MAZE_CONFIG.wallThickness;
+                    const centerY = y * cellSize + cellSize / 2 + MAZE_CONFIG.wallThickness;
+                    
+                    // 使用统一的样式绘制中心点
+                    drawingCtx.beginPath();
+                    drawingCtx.fillStyle = 'rgba(74, 144, 226, 0.3)';
+                    drawingCtx.arc(centerX + offsetX, centerY + offsetY, 2, 0, Math.PI * 2);
+                    drawingCtx.fill();
+                }
+            }
+        }
+
+        // 修改计时器启动函数
+        function startTimer() {
+            startTime = Date.now();  // 记录开始时间
+            document.getElementById('timer').textContent = '00:00.000';
+            timer = setInterval(function() {
+                const currentTime = Date.now();
+                const elapsedTime = currentTime - startTime;
+                
+                // 计算分钟、秒和毫秒
+                const minutes = Math.floor(elapsedTime / 60000);
+                const seconds = Math.floor((elapsedTime % 60000) / 1000);
+                const milliseconds = elapsedTime % 1000;
+                
+                // 格式化显示
+                document.getElementById('timer').textContent = 
+                    `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(3, '0')}`;
+            }, 10);  // 每10毫秒更新一次显示
+        }
+
+        // 修改计时器停止函数
+        function stopTimer() {
+            if (timer) {
+                clearInterval(timer);
+                timer = null;
+                
+                // 记录最终时间
+                const finalTime = Date.now() - startTime;
+                const minutes = Math.floor(finalTime / 60000);
+                const seconds = Math.floor((finalTime % 60000) / 1000);
+                const milliseconds = finalTime % 1000;
+                
+                // 更新显示最终时间
+                document.getElementById('timer').textContent = 
+                    `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(3, '0')}`;
+            }
         }
 
         // 修改 initializeMazePieces 函数，在末尾添加：
@@ -1352,6 +1427,9 @@
             drawingCanvas.addEventListener('touchstart', handleTouchStart);
             drawingCanvas.addEventListener('touchmove', handleTouchMove);
             drawingCanvas.addEventListener('touchend', finishDrawing);
+            
+            // 添加双击事件监听器
+            drawingCanvas.addEventListener('dblclick', handleDoubleClick);
         }
 
         // 添加取消绘制函数
@@ -1382,92 +1460,39 @@
             showPreview(mouseEvent);
         }
 
-        // 添加清除绘图功能
-        function clearDrawing() {
-            if (drawingCtx) {
-                // 保存当前画布内容
-                const imageData = drawingCtx.getImageData(0, 0, drawingCanvas.width, drawingCanvas.height);
-                
-                // 清除画布
-                drawingCtx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
-                
-                // 重新绘制中心点标记
-                drawCellCenters();
+        // 修改 showPreview 函数
+        function showPreview(e) {
+            if (!isDrawing) return;
+            
+            const [x, y] = getCoordinates(e);
+            const center = getNearestCellCenter(x, y);
+            const currentX = center.x;
+            const currentY = center.y;
+            
+            // 清除之前的预览
+            previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+            
+            previewCtx.beginPath();
+            previewCtx.shadowColor = 'rgba(0, 0, 0, 0.2)';
+            previewCtx.shadowBlur = 4;
+            previewCtx.shadowOffsetX = 2;
+            previewCtx.shadowOffsetY = 2;
+            previewCtx.lineWidth = MAZE_CONFIG.wallThickness;
+            previewCtx.lineCap = 'round';
+            previewCtx.lineJoin = 'round';
+            // 使用单一颜色替代渐变
+            previewCtx.strokeStyle = '#4a90e2';
+            previewCtx.globalAlpha = 0.7;
+            
+            previewCtx.moveTo(startX, startY);
+            const dx = Math.abs(currentX - startX);
+            const dy = Math.abs(currentY - startY);
+            if (dx > dy) {
+                previewCtx.lineTo(currentX, startY);
+            } else {
+                previewCtx.lineTo(startX, currentY);
             }
-            
-            if (previewCtx) {
-                previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
-            }
-        }
-
-        // 修改绘制所有格子中心点的函数
-        function drawCellCenters() {
-            if (!drawingCtx) return;  // 确保 context 存在
-            
-            const mirrorMaze = document.getElementById('mirror-maze');
-            const rect = mirrorMaze.getBoundingClientRect();
-            
-            // 使用与迷宫生成时完全相同的计算方式
-            const margin = 60;
-            const availableSize = Math.min(520, 520) - (margin * 2);  // 使用固定画布尺寸
-            const cellSize = Math.floor(availableSize / 8);
-            const mazeSize = (cellSize * 8) + MAZE_CONFIG.wallThickness;
-            
-            // 计算居中偏移
-            const offsetX = Math.floor((520 - mazeSize) / 2);  // 使用固定画布尺寸
-            const offsetY = Math.floor((520 - mazeSize) / 2);
-            
-            // 遍历所有格子
-            for(let y = 0; y < 8; y++) {
-                for(let x = 0; x < 8; x++) {
-                    // 计算格子中心点坐标
-                    const centerX = x * cellSize + cellSize / 2 + MAZE_CONFIG.wallThickness;
-                    const centerY = y * cellSize + cellSize / 2 + MAZE_CONFIG.wallThickness;
-                    
-                    // 绘制中心点标记
-                    drawingCtx.beginPath();
-                    drawingCtx.fillStyle = 'rgba(74, 144, 226, 0.3)';  // 调整透明度
-                    drawingCtx.arc(centerX + offsetX, centerY + offsetY, 4, 0, Math.PI * 2);  // 增大点的尺寸
-                    drawingCtx.fill();
-                }
-            }
-        }
-
-        // 修改计时器启动函数
-        function startTimer() {
-            startTime = Date.now();  // 记录开始时间
-            document.getElementById('timer').textContent = '00:00.000';
-            timer = setInterval(function() {
-                const currentTime = Date.now();
-                const elapsedTime = currentTime - startTime;
-                
-                // 计算分钟、秒和毫秒
-                const minutes = Math.floor(elapsedTime / 60000);
-                const seconds = Math.floor((elapsedTime % 60000) / 1000);
-                const milliseconds = elapsedTime % 1000;
-                
-                // 格式化显示
-                document.getElementById('timer').textContent = 
-                    `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(3, '0')}`;
-            }, 10);  // 每10毫秒更新一次显示
-        }
-
-        // 修改计时器停止函数
-        function stopTimer() {
-            if (timer) {
-                clearInterval(timer);
-                timer = null;
-                
-                // 记录最终时间
-                const finalTime = Date.now() - startTime;
-                const minutes = Math.floor(finalTime / 60000);
-                const seconds = Math.floor((finalTime % 60000) / 1000);
-                const milliseconds = finalTime % 1000;
-                
-                // 更新显示最终时间
-                document.getElementById('timer').textContent = 
-                    `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(3, '0')}`;
-            }
+            previewCtx.stroke();
         }
     </script>
 </body>
