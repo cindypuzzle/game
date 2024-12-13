@@ -217,7 +217,6 @@
             #game {
                 height: 380px;
                 padding: 20px;
-                border-radius: 12px;
             }
             
             .maze-piece {
@@ -456,22 +455,40 @@
             game.innerHTML = '';
             
             const canvas = document.createElement('canvas');
-            canvas.width = 520;     // 增加画布尺寸以适更粗的墙
+            canvas.width = 520;
             canvas.height = 520;
             const ctx = canvas.getContext('2d');
             
             // 生成存迷宫
-            currentMaze = generateMaze();  // 保存到全局变量
+            currentMaze = generateMaze();
             
             // 设置背景
             ctx.fillStyle = MAZE_CONFIG.backgroundColor;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            // 调整计算方式，确保迷宫完整显示
-            const margin = 60; // 增加边距
+            // 计算迷宫和华容道的基本尺寸
+            const margin = 60;
             const availableSize = Math.min(canvas.width, canvas.height) - (margin * 2);
             const cellSize = Math.floor(availableSize / 8);
             const mazeSize = (cellSize * 8) + MAZE_CONFIG.wallThickness;
+            
+            // 计算华容道尺寸（只声明一次）
+            const puzzleSize = mazeSize - (MAZE_CONFIG.wallThickness * 2);
+            const blockSize = Math.floor(puzzleSize / 4);
+            const blockMargin = 0;
+            
+            // 打印迷宫和华容道的尺寸信息
+            console.log('迷宫尺寸信息:', {
+                '迷宫总大小': `${mazeSize}x${mazeSize}px`,
+                '迷宫格子大小': `${cellSize}x${cellSize}px`,
+                '墙壁厚度': `${MAZE_CONFIG.wallThickness}px`
+            });
+            
+            console.log('华容道尺寸信息:', {
+                '华容道总大小': `${puzzleSize}x${puzzleSize}px`,
+                '滑块大小': `${blockSize}x${blockSize}px`,
+                '滑块间距': `${blockMargin}px`
+            });
             
             // 计算居中偏移
             const offsetX = Math.floor((canvas.width - mazeSize) / 2);
@@ -544,18 +561,13 @@
             const canvasRect = canvas.getBoundingClientRect();
             const gameRect = game.getBoundingClientRect();
             
-            // 计画布相对于游戏容器的移
+            // 计算画布相对于游戏容器的偏移
             const canvasOffsetX = canvasRect.left - gameRect.left;
             const canvasOffsetY = canvasRect.top - gameRect.top;
             
-            // 重新计算华容道的大小和位置
-            const puzzleSize = mazeSize - (MAZE_CONFIG.wallThickness * 2); // 减去左右两墙的厚度
-            const blockSize = Math.floor(puzzleSize / 4); // 每个方块的大小
-            const blockMargin = 0; // 移除方块间距
-            
-            // 计算华容道起始位考虑画布移边距
-            const puzzleStartX = canvasOffsetX + offsetX - (MAZE_CONFIG.wallThickness / 2); // 更多地向移动
-            const puzzleStartY = canvasOffsetY + offsetY - (MAZE_CONFIG.wallThickness / 2); // 更多地向上移动
+            // 计算华容道起始位置（使用之前声明的变量）
+            const puzzleStartX = canvasOffsetX + offsetX - (MAZE_CONFIG.wallThickness / 2);
+            const puzzleStartY = canvasOffsetY + offsetY - (MAZE_CONFIG.wallThickness / 2);
 
             // 清除现有的方块
             const existingItems = game.querySelectorAll('.game_item');
@@ -797,7 +809,7 @@
             // 绘迷宫墙壁
             ctx.fillStyle = MAZE_CONFIG.mazeColor;
             
-            // 使用与初始化时相同的尺寸
+            // 使用与初始化时相同的尺
             const margin = 60;
             const availableSize = Math.min(canvas.width, canvas.height) - (margin * 2);
             const cellSize = Math.floor(availableSize / 8);
@@ -1046,7 +1058,7 @@
             }, 250);
         });
 
-        // 修改 CSS 样式，添加过渡效果
+        // 修改 CSS 式，添加过渡效果
         const styleElement = document.createElement('style');
         styleElement.textContent = `
             .game_item {
@@ -1214,7 +1226,7 @@
                     drawingCtx.stroke();
                 });
                 
-                // 最后重新绘制所有��心点
+                // 最后重新绘制所有心点
                 drawCellCenters();
             }
         }
@@ -1354,7 +1366,7 @@
             newGameButton.innerText = '新游戏';
             newGameButton.onclick = startNewGame;
             
-            // 创建提交答案按钮
+            // ���建提交答案按钮
             const solveButton = document.createElement('button');
             solveButton.className = 'btn btn-solve';
             solveButton.innerText = '提交答案';
