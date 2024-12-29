@@ -382,6 +382,21 @@
         .toast.info {
             background: linear-gradient(135deg, #4a90e2, #67a6e5);
         }
+
+        .mode-selector {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-mode {
+            background: linear-gradient(135deg, #95a5a6, #7f8c8d);
+            opacity: 0.7;
+        }
+
+        .btn-mode.active {
+            background: linear-gradient(135deg, #34ace0, #63cdff);
+            opacity: 1;
+        }
     </style>
 </head>
 <body>
@@ -391,6 +406,10 @@
 
     <div class="controls">
         <button class="btn btn-exit" onclick="exitGame()">退出</button>
+        <div class="mode-selector">
+            <button class="btn btn-mode active" onclick="switchMode('novice')">新手模式</button>
+            <button class="btn btn-mode" onclick="switchMode('expert')">专家模式</button>
+        </div>
     </div>
 
     <div class="stats">
@@ -691,6 +710,7 @@
         window.onload = function() {
             currentMaze = generateMaze(); // 确保页面加载时就生成迷宫
             initializeMazePieces();
+            updateMirrorMazeState();
         }
 
         // 新游戏按钮点击事件
@@ -726,6 +746,10 @@
             
             // 打乱方块
             chaos();
+            
+            // 重置华容道完成状态
+            isPuzzleComplete = false;
+            updateMirrorMazeState();
         }
 
         // 退出按钮点击事件
@@ -1140,6 +1164,11 @@
             }
 
             renderGame();
+
+            if (gameMode === 'expert') {
+                isPuzzleComplete = isPuzzleSolved();
+                updateMirrorMazeState();
+            }
         }
 
         // 渲染华容道
@@ -1321,8 +1350,12 @@
 
         // 修改 startDrawing 函数
         function startDrawing(e) {
-            e.preventDefault();
+            if (gameMode === 'expert' && !isPuzzleComplete) {
+                showToast('请先完成华容道谜题', 'info');
+                return;
+            }
             
+            e.preventDefault();
             const coords = getCoordinates(e);
             const [x, y] = coords;
             const center = getNearestCellCenter(x, y);
@@ -1738,6 +1771,55 @@
                     container.removeChild(toast);
                 }, 300);
             }, duration);
+        }
+
+        // 添加游戏模式变量
+        let gameMode = 'novice'; // 默认新手模式
+        let isPuzzleComplete = false; // 华容道是否完成
+
+        // 切换游戏模式
+        function switchMode(mode) {
+            gameMode = mode;
+            // 更新按钮状态
+            document.querySelectorAll('.btn-mode').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.textContent.includes(mode === 'novice' ? '新手' : '专家')) {
+                    btn.classList.add('active');
+                }
+            });
+            
+            // 重新开始游戏
+            startNewGame();
+        }
+
+        // 检查华容道是否完成
+        function isPuzzleSolved() {
+            let count = 1;
+            for (let i = 0; i < 4; i++) {
+                for (let j = 0; j < 4; j++) {
+                    if (i === 3 && j === 3) {
+                        if (numberList[i][j] !== 0) return false;
+                    } else {
+                        if (numberList[i][j] !== count++) return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        // 更新镜像迷宫状态
+        function updateMirrorMazeState() {
+            const mirrorMaze = document.getElementById('mirror-maze');
+            if (gameMode === 'expert') {
+                // 只在专家模式下控制是否可以绘制
+                if (isPuzzleComplete) {
+                    mirrorMaze.style.pointerEvents = 'auto';
+                } else {
+                    mirrorMaze.style.pointerEvents = 'none';
+                }
+            } else {
+                mirrorMaze.style.pointerEvents = 'auto';
+            }
         }
     </script>
 </body>

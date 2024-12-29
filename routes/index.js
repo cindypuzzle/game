@@ -35,8 +35,8 @@ router.get('/', function(req, res, next) {
     },
     {
       id: 'sliding-puzzle',
-      title: '数字华容道',
-      description: '经典的数字华容道游戏，通过移动方块将数字排序'
+      title: '一举两得',
+      description: '在华容道的挑战中，你需要记住迷宫的路径，通过记忆来解决迷宫'
     }
   ];
   
