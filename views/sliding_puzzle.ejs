@@ -87,24 +87,31 @@
             margin: 0 0 20px;
             display: flex;
             gap: 40px;
+            min-width: 300px;
+            justify-content: center;
         }
 
         .stat-item {
             display: flex;
             flex-direction: column;
             align-items: center;
+            min-width: 120px;
         }
 
         .stat-label {
             font-size: 14px;
             color: #7f8fa6;
             margin-bottom: 5px;
+            text-align: center;
         }
 
         .stat-value {
             font-size: 24px;
             font-weight: bold;
             color: #4a90e2;
+            font-family: monospace;
+            min-width: 100px;
+            text-align: center;
         }
 
         .container {
@@ -330,6 +337,51 @@
             opacity: 1;
             transform: translateY(-1px);
         }
+
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
+        }
+
+        .toast {
+            background: linear-gradient(135deg, #ff6b6b, #ff8e8e);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            font-size: 16px;
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: all 0.3s ease;
+            text-align: center;
+            min-width: 200px;
+            max-width: 80vw;
+            pointer-events: none;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .toast.success {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+        }
+
+        .toast.error {
+            background: linear-gradient(135deg, #ff6b6b, #ff8e8e);
+        }
+
+        .toast.info {
+            background: linear-gradient(135deg, #4a90e2, #67a6e5);
+        }
     </style>
 </head>
 <body>
@@ -360,6 +412,8 @@
             <!-- 镜像迷宫将在这里动态生成 -->
         </div>
     </div>
+
+    <div class="toast-container"></div>
 
     <script>
         const MAZE = {
@@ -655,9 +709,16 @@
             ];
             zeroRow = 3;
             zeroCol = 3;
+            
+            // 重置步数
             moves = 0;
             document.getElementById('moves').textContent = '0';
+            
+            // 重置计时器显示
             document.getElementById('timer').textContent = '00:00.000';
+            
+            // 清除绘制的迷宫路径
+            clearDrawing();
             
             // 重新生成迷宫和初始化方块
             currentMaze = generateMaze();
@@ -744,8 +805,135 @@
             return null;
         }
 
-        // 修改显示解法函数
+        // 添加验证迷宫答案的函数
+        function validateMazeAnswer() {
+            if (drawnLines.length === 0) {
+                showToast('请先绘制迷宫答案', 'info');
+                return false;
+            }
+
+            const userPath = convertLinesToPath(drawnLines);
+            
+            if (!isValidPath(userPath)) {
+                showToast('路径必须从起点连接到终点', 'error');
+                return false;
+            }
+
+            if (!isPathContinuous(userPath)) {
+                showToast('路径必须是完整连续的，不能有断开的部分', 'error');
+                return false;
+            }
+
+            if (isPathCrossingWalls(userPath, currentMaze)) {
+                showToast('路径不能穿过墙壁', 'error');
+                return false;
+            }
+
+            showToast('答案正确！', 'success');
+            return true;
+        }
+
+        // 将线段转换为路径点
+        function convertLinesToPath(lines) {
+            const points = new Set();
+            const sizes = calculateGameSizes();
+            
+            // 首先收集所有点
+            lines.forEach(line => {
+                const x1 = Math.floor((line.x1 - sizes.offsetX - MAZE_CONFIG.wallThickness) / sizes.cellSize);
+                const y1 = Math.floor((line.y1 - sizes.offsetY - MAZE_CONFIG.wallThickness) / sizes.cellSize);
+                const x2 = Math.floor((line.x2 - sizes.offsetX - MAZE_CONFIG.wallThickness) / sizes.cellSize);
+                const y2 = Math.floor((line.y2 - sizes.offsetY - MAZE_CONFIG.wallThickness) / sizes.cellSize);
+                
+                if (line.isHorizontal) {
+                    for (let x = Math.min(x1, x2); x <= Math.max(x1, x2); x++) {
+                        points.add(`${x},${y1}`);
+                    }
+                } else {
+                    for (let y = Math.min(y1, y2); y <= Math.max(y1, y2); y++) {
+                        points.add(`${x1},${y}`);
+                    }
+                }
+            });
+            
+            // 将点集合转换为数组
+            return Array.from(points).map(point => {
+                const [x, y] = point.split(',').map(Number);
+                return {x, y};
+            });
+        }
+
+        // 验证路径是否从起点到终点
+        function isValidPath(path) {
+            const hasStart = path.some(p => p.x === 0 && p.y === 0);
+            const hasEnd = path.some(p => p.x === 7 && p.y === 7);
+            return hasStart && hasEnd;
+        }
+
+        // 修改验证路径连续性的函数
+        function isPathContinuous(path) {
+            // 首先找到起点（应该是 0,0）
+            const startPoint = path.find(p => p.x === 0 && p.y === 0);
+            if (!startPoint) return false;
+
+            // 创建已访问点的集合
+            const visited = new Set([`${startPoint.x},${startPoint.y}`]);
+            // 创建待访问的点队列，从起点开始
+            const queue = [startPoint];
+            
+            // 使用广度优先搜索检查路径的连续性
+            while (queue.length > 0) {
+                const current = queue.shift();
+                
+                // 检查四个方向的相邻点
+                const directions = [
+                    {dx: 0, dy: -1}, // 上
+                    {dx: 1, dy: 0},  // 右
+                    {dx: 0, dy: 1},  // 下
+                    {dx: -1, dy: 0}  // 左
+                ];
+                
+                for (const {dx, dy} of directions) {
+                    const nextX = current.x + dx;
+                    const nextY = current.y + dy;
+                    const key = `${nextX},${nextY}`;
+                    
+                    // 检查这个点是否在路径中且未访问过
+                    const nextPoint = path.find(p => p.x === nextX && p.y === nextY);
+                    if (nextPoint && !visited.has(key)) {
+                        visited.add(key);
+                        queue.push(nextPoint);
+                    }
+                }
+            }
+            
+            // 检查是否所有路径点都被访问到了
+            return path.every(p => visited.has(`${p.x},${p.y}`));
+        }
+
+        // 验证路径是否穿墙
+        function isPathCrossingWalls(path, maze) {
+            for (let i = 1; i < path.length; i++) {
+                const current = path[i-1];
+                const next = path[i];
+                
+                // 检查两点之间是否有墙
+                if (next.x > current.x && (maze[current.y][current.x] & MAZE.E)) return true; // 向东移动
+                if (next.x < current.x && (maze[current.y][current.x] & MAZE.W)) return true; // 向西移动
+                if (next.y > current.y && (maze[current.y][current.x] & MAZE.S)) return true; // 向南移动
+                if (next.y < current.y && (maze[current.y][current.x] & MAZE.N)) return true; // 向北移动
+            }
+            return false;
+        }
+
+        // 修改 solveMaze 函数
         function solveMaze() {
+            // 先验证用户的答案
+            if (!validateMazeAnswer()) {
+                return;
+            }
+            
+            // 答案正确，显示解法
             // 停止计时器
             stopTimer();
             isTimerStarted = false;
@@ -966,19 +1154,29 @@
             });
         }
 
-        // 打乱华容道
+        // 修改打乱华容道的函数
         function chaos() {
             isShuffling = true;
             const rCount = Math.floor(Math.random() * 50 + 50);
+            
+            // 保存当前步数
+            const tempMoves = moves;
+            
             for(let i = 0; i <= rCount; i++) {
                 const rRow = Math.floor(Math.random() * 4);
                 const rCol = Math.floor(Math.random() * 4);
-                // 临时禁用计时器启动
+                // 临时禁用计时器启动和步数计算
                 const tempIsTimerStarted = isTimerStarted;
                 isTimerStarted = true;  // 防止在打乱过程中启动计时器
+                moves = tempMoves;      // 保持步数不变
                 zeroRun(rRow, rCol);
                 isTimerStarted = tempIsTimerStarted;
             }
+            
+            // 重置步数为0
+            moves = 0;
+            document.getElementById('moves').textContent = '0';
+            
             isShuffling = false;
         }
 
@@ -1514,6 +1712,32 @@
                     game.appendChild(gameItem);
                 }
             }
+        }
+
+        // 添加显示提示的函数
+        function showToast(message, type = 'error', duration = 3000) {
+            const container = document.querySelector('.toast-container');
+            
+            // 创建提示元素
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            
+            // 添加到容器
+            container.appendChild(toast);
+            
+            // 触发重排以启动动画
+            setTimeout(() => {
+                toast.classList.add('show');
+            }, 10);
+            
+            // 设置自动消失
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => {
+                    container.removeChild(toast);
+                }, 300);
+            }, duration);
         }
     </script>
 </body>
