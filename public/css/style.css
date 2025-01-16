@@ -16,3 +16,365 @@ body {
     padding: 20px;
     cursor: pointer;
 }
+
+.login-container {
+    max-width: 400px;
+    margin: 50px auto;
+    padding: 20px;
+    text-align: center;
+}
+
+.login-options {
+    margin-top: 20px;
+}
+
+.login-button {
+    display: inline-block;
+    padding: 10px 20px;
+    margin: 10px;
+    border-radius: 5px;
+    text-decoration: none;
+    color: white;
+}
+
+.wechat-login {
+    background-color: #07C160;
+}
+
+.wechat-login:hover {
+    background-color: #06B057;
+}
+
+.header {
+    padding: 20px;
+    background-color: #f8f9fa;
+    margin-bottom: 30px;
+}
+
+.user-status {
+    margin-top: 10px;
+}
+
+.welcome {
+    margin-right: 15px;
+    font-size: 16px;
+}
+
+.nav-button {
+    display: inline-block;
+    padding: 8px 16px;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.login {
+    background-color: #007bff;
+    color: white;
+}
+
+.logout {
+    background-color: #dc3545;
+    color: white;
+}
+
+.login-prompt {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 40px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+}
+
+.login-prompt h2 {
+    margin-bottom: 20px;
+    color: #666;
+}
+
+.login-prompt .login-button {
+    background-color: #007bff;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.login-prompt .login-button:hover {
+    background-color: #0056b3;
+}
+
+/* 登录页面核心样式优化 */
+.auth-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #EBF5FE 0%, #E3F2FD 100%);
+    padding: 20px;
+}
+
+.auth-box {
+    background: rgba(255, 255, 255, 0.95);
+    padding: 40px;
+    border-radius: 28px;
+    box-shadow: 
+        0 20px 40px rgba(0, 0, 0, 0.06),
+        0 1px 3px rgba(0, 0, 0, 0.05);
+    width: 100%;
+    max-width: 440px;
+    position: relative;
+    backdrop-filter: blur(10px);
+}
+
+.brain-logo {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 24px;
+    background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%);
+}
+
+.brain-logo i {
+    font-size: 40px;
+    background: linear-gradient(45deg, #1976D2, #2196F3);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 2px 4px rgba(33, 150, 243, 0.2));
+}
+
+.auth-box h1 {
+    color: #1565C0;
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    letter-spacing: -0.5px;
+}
+
+.subtitle {
+    color: #546E7A;
+    font-size: 16px;
+    margin-bottom: 36px;
+    font-weight: 400;
+}
+
+.form-group {
+    margin-bottom: 24px;
+    position: relative;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 16px 20px 16px 52px;
+    border: 2px solid #E3F2FD;
+    border-radius: 16px;
+    font-size: 15px;
+    color: #37474F;
+    transition: all 0.3s ease;
+    background: #FFFFFF;
+    font-weight: 500;
+}
+
+.form-group input:focus {
+    border-color: #2196F3;
+    box-shadow: 0 0 0 4px rgba(33, 150, 243, 0.1);
+    outline: none;
+}
+
+.form-group i {
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #90CAF9;
+    font-size: 20px;
+    transition: all 0.3s ease;
+    pointer-events: none;
+}
+
+.form-group input:focus + i {
+    color: #2196F3;
+}
+
+.form-options {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 24px 0 32px;
+}
+
+.remember-me {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    color: #546E7A;
+    cursor: pointer;
+    user-select: none;
+}
+
+.remember-me input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    border: 2px solid #E3F2FD;
+    border-radius: 6px;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.remember-me input[type="checkbox"]:checked {
+    background: #2196F3;
+    border-color: #2196F3;
+}
+
+.remember-me input[type="checkbox"]:checked::after {
+    content: '✓';
+    position: absolute;
+    color: white;
+    font-size: 14px;
+    left: 50%;
+    top: 45%;
+    transform: translate(-50%, -50%);
+}
+
+.forgot-password {
+    color: #2196F3;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.forgot-password:hover {
+    color: #1976D2;
+    text-decoration: underline;
+}
+
+.auth-button {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(45deg, #1976D2, #2196F3);
+    color: white;
+    border: none;
+    border-radius: 16px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    letter-spacing: 0.5px;
+}
+
+.auth-button:hover {
+    background: linear-gradient(45deg, #1565C0, #1976D2);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(33, 150, 243, 0.25);
+}
+
+.divider {
+    margin: 32px 0;
+    display: flex;
+    align-items: center;
+    color: #90A4AE;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.divider::before,
+.divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: #E3F2FD;
+    margin: 0 16px;
+}
+
+.social-button.wechat {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(45deg, #07C160, #0ABF5B);
+    color: white;
+    border: none;
+    border-radius: 16px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    text-decoration: none;
+    letter-spacing: 0.5px;
+}
+
+.social-button.wechat:hover {
+    background: linear-gradient(45deg, #06AD56, #09AB52);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(7, 193, 96, 0.25);
+}
+
+.auth-footer {
+    margin-top: 32px;
+    color: #78909C;
+    font-size: 15px;
+    font-weight: 400;
+}
+
+.auth-footer a {
+    color: #2196F3;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.auth-footer a:hover {
+    color: #1976D2;
+    text-decoration: underline;
+}
+
+@media (max-width: 480px) {
+    .auth-box {
+        padding: 32px 24px;
+        margin: 16px;
+        border-radius: 24px;
+    }
+
+    .brain-logo {
+        width: 70px;
+        height: 70px;
+        margin-bottom: 24px;
+    }
+
+    .brain-logo i {
+        font-size: 32px;
+    }
+
+    .auth-box h1 {
+        font-size: 24px;
+    }
+
+    .subtitle {
+        font-size: 15px;
+        margin-bottom: 32px;
+    }
+
+    .form-group input {
+        padding: 14px 18px 14px 48px;
+        font-size: 14px;
+    }
+
+    .form-group i {
+        font-size: 18px;
+    }
+}
