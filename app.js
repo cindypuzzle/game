@@ -1,6 +1,9 @@
 const express = require('express');
 const path = require('path');
 const app = express();
+const cookieParser = require('cookie-parser');
+const authRouter = require('./routes/auth');
+const recordsRouter = require('./routes/records');
 
 // 设置视图引擎
 app.set('views', path.join(__dirname, 'views'));
@@ -39,6 +42,14 @@ app.get('/game/snake', (req, res) => {
 app.get('/game/spiral-galaxy', (req, res) => {
     res.render('spiral_galaxy', { title: '星系重逢' });
 });
+
+// 添加中间件
+app.use(express.json());
+app.use(cookieParser());
+
+// 添加路由
+app.use('/auth', authRouter);
+app.use('/records', recordsRouter);
 
 // 错误处理中间件
 app.use((err, req, res, next) => {

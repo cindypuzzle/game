@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>邮箱验证</title>
+    <style>
+        body {
+            font-family: "Microsoft YaHei", Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f5f6fa;
+        }
+
+        .message-container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            color: #2d3436;
+        }
+
+        .debug-info {
+            margin-top: 20px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            font-size: 12px;
+            color: #666;
+            text-align: left;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <div class="message-container">
+        <div class="message"><%= message %></div>
+        
+        <!-- 添加调试信息 -->
+        <div class="debug-info">
+            <strong>调试信息:</strong>
+            <br>
+            URL: <span id="currentUrl"></span>
+            <br>
+            Hash: <span id="urlHash"></span>
+            <br>
+            Search Params: <span id="searchParams"></span>
+        </div>
+    </div>
+
+    <script>
+        // 显示调试信息
+        document.getElementById('currentUrl').textContent = window.location.href;
+        document.getElementById('urlHash').textContent = window.location.hash;
+        document.getElementById('searchParams').textContent = window.location.search;
+
+        // 输出到控制台以便调试
+        console.log('=== 前端调试信息 ===');
+        console.log('完整 URL:', window.location.href);
+        console.log('Hash:', window.location.hash);
+        console.log('Search:', window.location.search);
+        console.log('Pathname:', window.location.pathname);
+        console.log('==================');
+
+        // 延迟跳转
+        setTimeout(() => {
+            console.log('准备跳转到:', '<%= redirect %>');
+            window.location.href = '<%= redirect %>';
+        }, 5000); // 延长到5秒以便查看调试信息
+    </script>
+</body>
+</html> 
