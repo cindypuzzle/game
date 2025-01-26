@@ -41,7 +41,7 @@ router.get('/', function(req, res, next) {
   ];
   
   res.render('index', { 
-    title: '游戏集合',
+    title: 'Mind Record',
     games: games
   });
 });

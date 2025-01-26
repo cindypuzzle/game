@@ -34,6 +34,7 @@ router.post('/register', async (req, res) => {
       options: {
         data: { username },
         emailRedirectTo: `${process.env.SITE_URL}/auth/callback`,
+        redirectTo: `${process.env.SITE_URL}/auth/callback`
       }
     });
 
@@ -125,38 +126,61 @@ router.get('/callback', async (req, res) => {
     console.log('Query 参数:', req.query);
     console.log('URL:', req.url);
     console.log('Hash:', req.hash);
+    console.log('完整URL:', req.originalUrl);
     console.log('========================');
 
-    // 从 URL 中获取 access_token 和 refresh_token
-    const hashParams = new URLSearchParams(req.query.hash?.substring(1));
-    const accessToken = hashParams.get('access_token');
-    const refreshToken = hashParams.get('refresh_token');
+    // 首先渲染一个中间页面来处理 hash
+    if (!req.query.access_token) {
+      return res.send(`
+        <script>
+          // 从 URL hash 中获取参数
+          const hashParams = new URLSearchParams(window.location.hash.substring(1));
+          const params = Object.fromEntries(hashParams.entries());
+          
+          // 将参数添加到 URL query 中
+          const newUrl = '/auth/callback?' + new URLSearchParams(params).toString();
+          
+          // 重定向到新的 URL
+          window.location.replace(newUrl);
+        </script>
+      `);
+    }
 
-    if (!accessToken) {
-      // 如果没有 token，尝试设置会话
-      const { data, error } = await supabase.auth.setSession({
-        access_token: req.query.access_token,
-        refresh_token: req.query.refresh_token
-      });
+    // 处理带有 token 的请求
+    const { access_token, refresh_token, error, error_description } = req.query;
 
-      if (error) {
-        console.error('设置会话错误:', error);
-        throw error;
-      }
+    // 检查是否有错误
+    if (error) {
+      throw new Error(`认证错误: ${error_description || error}`);
+    }
 
-      if (!data.session) {
-        throw new Error('无法创建会话');
-      }
+    if (!access_token) {
+      throw new Error('未找到访问令牌');
+    }
 
-      // 设置 cookie
+    // 使用 token 设置会话
+    const { data, error: sessionError } = await supabase.auth.setSession({
+      access_token,
+      refresh_token
+    });
+
+    if (sessionError) {
+      console.error('设置会话错误:', sessionError);
+      throw sessionError;
+    }
+
+    // 设置 cookie
+    if (data?.session) {
       res.cookie('sb-token', data.session.access_token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production'
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'Lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000 // 7天
       });
     }
 
     // 获取用户信息
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    const { data: { user }, error: userError } = await supabase.auth.getUser(access_token);
     
     if (userError) {
       console.error('获取用户信息错误:', userError);
@@ -169,10 +193,9 @@ router.get('/callback', async (req, res) => {
 
     console.log('验证成功，用户信息:', user);
 
-    res.render('auth-callback', {
-      message: '邮箱验证成功！正在跳转...',
-      redirect: '/'
-    });
+    // 重定向到主页
+    res.redirect('/');
+
   } catch (error) {
     console.error('验证失败详情:', {
       error: error.message,
