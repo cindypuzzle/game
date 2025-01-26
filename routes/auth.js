@@ -12,24 +12,56 @@ router.post('/register', async (req, res) => {
   try {
     const { email, password, username } = req.body;
     
+    console.log('开始注册流程...');
+    console.log('Supabase URL:', process.env.SUPABASE_URL);
+    
+    // 测试 Supabase 连接
+    try {
+      const { data: testData, error: testError } = await supabase.from('auth.users').select('count').limit(1);
+      if (testError) {
+        console.error('Supabase 连接测试失败:', testError);
+      } else {
+        console.log('Supabase 连接测试成功');
+      }
+    } catch (testError) {
+      console.error('Supabase 连接测试异常:', testError);
+    }
+
+    // 注册用户
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: { username },
         emailRedirectTo: `${process.env.SITE_URL}/auth/callback`,
-        captchaToken: null
       }
     });
 
-    if (authError) throw authError;
+    if (authError) {
+      console.error('注册错误:', authError);
+      throw authError;
+    }
+
+    console.log('注册成功:', authData);
 
     res.json({ 
       message: '注册成功,请查收验证邮件',
       user: authData.user 
     });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    console.error('注册异常:', error);
+    // 检查是否是网络错误
+    if (error.code === 'ENOTFOUND') {
+      res.status(503).json({ 
+        error: '网络连接失败，请检查网络设置或稍后重试',
+        details: error.message 
+      });
+    } else {
+      res.status(400).json({ 
+        error: error.message,
+        details: error.cause?.message || '未知错误' 
+      });
+    }
   }
 });
 
