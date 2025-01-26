@@ -20,9 +20,9 @@
 
         .score-container {
             display: flex;
-            justify-content: space-between;
+            justify-content: center;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
 
         .back-button {
@@ -36,20 +36,28 @@
         }
 
         .score {
-            background-color: #bbada0;
-            padding: 15px 25px;
-            border-radius: 3px;
+            background: #776e65;
+            padding: 6px 16px;
+            border-radius: 20px;
             color: white;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
 
         .score span {
-            display: block;
             font-size: 13px;
-            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.85);
+            font-weight: 500;
         }
 
         .score strong {
-            font-size: 25px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #fff;
+            min-width: 40px;
+            text-align: right;
         }
 
         /* 游戏网格样式 */
@@ -125,6 +133,19 @@
             .n1024, .n2048 {
                 font-size: 25px;
             }
+
+            .score {
+                padding: 4px 12px;
+            }
+
+            .score span {
+                font-size: 12px;
+            }
+
+            .score strong {
+                font-size: 16px;
+                min-width: 35px;
+            }
         }
     </style>
 </head>
@@ -133,7 +154,6 @@
     
     <div class="game-container">
         <div class="score-container">
-            <a href="/" class="back-button">返回</a>
             <div class="score">
                 <span>分数:</span>
                 <strong>0</strong>
