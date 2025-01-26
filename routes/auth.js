@@ -1,120 +1,67 @@
 const express = require('express');
 const router = express.Router();
-const supabase = require('../config/supabase');
+const { supabase } = require('../config/supabase');
 
-// 渲染登录/注册页面
+// 登录页面
 router.get('/', (req, res) => {
-  res.render('auth');
+    res.render('auth', { title: '登录/注册' });
 });
 
-// 注册
-router.post('/register', async (req, res) => {
-  try {
-    const { email, password, username } = req.body;
-    
-    console.log('开始注册流程...');
-    console.log('Supabase URL:', process.env.SUPABASE_URL);
-    
-    // 测试 Supabase 连接
-    try {
-      const { data: testData, error: testError } = await supabase.from('auth.users').select('count').limit(1);
-      if (testError) {
-        console.error('Supabase 连接测试失败:', testError);
-      } else {
-        console.log('Supabase 连接测试成功');
-      }
-    } catch (testError) {
-      console.error('Supabase 连接测试异常:', testError);
-    }
-
-    // 注册用户
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { username },
-        emailRedirectTo: `${process.env.SITE_URL}/auth/callback`,
-        redirectTo: `${process.env.SITE_URL}/auth/callback`
-      }
-    });
-
-    if (authError) {
-      console.error('注册错误:', authError);
-      throw authError;
-    }
-
-    console.log('注册成功:', authData);
-
-    res.json({ 
-      message: '注册成功,请查收验证邮件',
-      user: authData.user 
-    });
-  } catch (error) {
-    console.error('注册异常:', error);
-    // 检查是否是网络错误
-    if (error.code === 'ENOTFOUND') {
-      res.status(503).json({ 
-        error: '网络连接失败，请检查网络设置或稍后重试',
-        details: error.message 
-      });
-    } else {
-      res.status(400).json({ 
-        error: error.message,
-        details: error.cause?.message || '未知错误' 
-      });
-    }
-  }
-});
-
-// 登录
+// 处理登录请求
 router.post('/login', async (req, res) => {
-  try {
     const { email, password } = req.body;
-    
-    if (!email || !password) {
-      return res.status(400).json({ error: '邮箱和密码都是必填项' });
-    }
-
-    // 直接使用 signInWithPassword 进行登录
-    const { data: { session }, error } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    });
-
-    if (error) {
-      if (error.message.includes('Email not confirmed')) {
-        return res.status(400).json({ 
-          error: '请先验证邮箱后再登录',
-          needVerification: true 
+    try {
+        const { data, error } = await supabase.auth.signInWithPassword({
+            email,
+            password
         });
-      }
-      throw error;
+
+        if (error) throw error;
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('登录错误:', error);
+        res.status(400).json({ 
+            success: false, 
+            error: error.message 
+        });
     }
-
-    // 设置 cookie
-    res.cookie('sb-token', session.access_token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production'
-    });
-
-    res.json({ message: '登录成功', user: session.user });
-  } catch (error) {
-    console.error('登录错误:', error);
-    res.status(500).json({ error: '服务器错误' });
-  }
 });
 
-// 登出
+// 处理注册请求
+router.post('/register', async (req, res) => {
+    const { email, password } = req.body;
+    try {
+        const { data, error } = await supabase.auth.signUp({
+            email,
+            password
+        });
+
+        if (error) throw error;
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('注册错误:', error);
+        res.status(400).json({ 
+            success: false, 
+            error: error.message 
+        });
+    }
+});
+
+// 处理登出请求
 router.post('/logout', async (req, res) => {
-  try {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
-    
-    res.clearCookie('sb-token');
-    res.json({ message: '已登出' });
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
+    try {
+        const { error } = await supabase.auth.signOut();
+        if (error) throw error;
+        res.json({ success: true });
+    } catch (error) {
+        console.error('登出错误:', error);
+        res.status(400).json({ 
+            success: false, 
+            error: error.message 
+        });
+    }
 });
 
 // 修改回调路由

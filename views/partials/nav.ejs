@@ -1,0 +1,92 @@
+<nav class="nav-bar">
+    <div class="nav-container">
+        <h1>Mind Record</h1>
+        <div class="nav-right">
+            <% if (user) { %>
+                <a href="/profile" class="nav-link">
+                    <i class="fas fa-user"></i>
+                    <%= user.user_metadata.username || user.email %>
+                </a>
+                <button onclick="logout()" class="nav-link">退出</button>
+            <% } else { %>
+                <a href="/auth" class="nav-link">登录/注册</a>
+            <% } %>
+        </div>
+    </div>
+</nav>
+
+<style>
+    .nav-bar {
+        background: #fff;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        position: sticky;
+        top: 0;
+        z-index: 100;
+    }
+
+    .nav-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 10px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .nav-container h1 {
+        margin: 0;
+        font-size: 24px;
+    }
+
+    .nav-right {
+        display: flex;
+        gap: 15px;
+        align-items: center;
+    }
+
+    .nav-link {
+        text-decoration: none;
+        color: #333;
+        padding: 8px 15px;
+        border-radius: 5px;
+        transition: background-color 0.3s;
+    }
+
+    .nav-link:hover {
+        background-color: #f5f6fa;
+    }
+
+    button.nav-link {
+        border: none;
+        background: none;
+        cursor: pointer;
+        font-size: inherit;
+    }
+
+    button.nav-link:hover {
+        color: #e74c3c;
+    }
+</style>
+
+<script>
+async function logout() {
+    if (confirm('确定要退出登录吗？')) {
+        try {
+            const response = await fetch('/auth/logout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                throw new Error('退出失败');
+            }
+        } catch (error) {
+            alert('退出失败: ' + error.message);
+        }
+    }
+}
+</script> 

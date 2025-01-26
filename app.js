@@ -6,6 +6,9 @@ const authRouter = require('./routes/auth');
 const recordsRouter = require('./routes/records');
 const profileRouter = require('./routes/profile');
 
+// 导入用户验证中间件
+const { requireAuth, checkUser } = require('./middleware/authMiddleware');
+
 // 设置视图引擎
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
@@ -35,9 +38,12 @@ app.use('/game/magic-rings', magicRingsRouter);
 app.use('/game/spiral-galaxy', spiralGalaxyRouter);
 app.use('/game/sliding-puzzle', slidingPuzzleRouter);
 
-// 添加2048游戏的路由
-app.get('/game/2048', (req, res) => {
-    res.render('2048', { title: '2048游戏' });
+// 修改2048游戏的路由
+app.get('/game/2048', checkUser, async (req, res) => {
+    res.render('2048', { 
+        title: '2048游戏',
+        user: res.locals.user  // 使用中间件设置的用户信息
+    });
 });
 
 app.get('/game/guess-number', (req, res) => {
