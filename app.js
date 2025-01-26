@@ -45,6 +45,7 @@ app.get('/game/spiral-galaxy', (req, res) => {
 
 // 添加中间件
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 // 添加路由

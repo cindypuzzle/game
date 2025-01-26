@@ -96,14 +96,14 @@
             <div class="tab" onclick="switchTab('register')">注册</div>
         </div>
 
-        <form id="loginForm" style="display: block;">
+        <form id="loginForm" style="display: block;" action="/auth/login" method="POST">
             <div class="form-group">
-                <label for="loginEmail">邮箱</label>
-                <input type="email" id="loginEmail" required>
+                <label for="email">邮箱</label>
+                <input type="email" name="email" id="email" required>
             </div>
             <div class="form-group">
-                <label for="loginPassword">密码</label>
-                <input type="password" id="loginPassword" required>
+                <label for="password">密码</label>
+                <input type="password" name="password" id="password" required>
             </div>
             <button type="submit">登录</button>
         </form>
@@ -145,8 +145,8 @@
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        email: document.getElementById('loginEmail').value,
-                        password: document.getElementById('loginPassword').value,
+                        email: document.getElementById('email').value,
+                        password: document.getElementById('password').value,
                     }),
                 });
 

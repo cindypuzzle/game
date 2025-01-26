@@ -71,30 +71,27 @@ router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
     
-    // 先获取用户信息
-    const { data: { users }, error: userError } = await supabase
-      .from('auth.users')
-      .select('email_confirmed_at')
-      .eq('email', email)
-      .single();
-
-    if (userError) throw userError;
-
-    // 检查邮箱是否已验证
-    if (!users.email_confirmed_at) {
-      return res.status(400).json({ 
-        error: '请先验证邮箱后再登录',
-        needVerification: true 
-      });
+    if (!email || !password) {
+      return res.status(400).json({ error: '邮箱和密码都是必填项' });
     }
 
+    // 直接使用 signInWithPassword 进行登录
     const { data: { session }, error } = await supabase.auth.signInWithPassword({
       email,
       password
     });
 
-    if (error) throw error;
+    if (error) {
+      if (error.message.includes('Email not confirmed')) {
+        return res.status(400).json({ 
+          error: '请先验证邮箱后再登录',
+          needVerification: true 
+        });
+      }
+      throw error;
+    }
 
+    // 设置 cookie
     res.cookie('sb-token', session.access_token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production'
@@ -102,7 +99,8 @@ router.post('/login', async (req, res) => {
 
     res.json({ message: '登录成功', user: session.user });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    console.error('登录错误:', error);
+    res.status(500).json({ error: '服务器错误' });
   }
 });
 
