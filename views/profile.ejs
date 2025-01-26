@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户中心 - Mind Record</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f5f6fa;
+            margin: 0;
+            padding: 20px;
+            color: #2c3e50;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .profile-header {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: #4a90e2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 32px;
+        }
+
+        .user-details h2 {
+            margin: 0 0 10px 0;
+        }
+
+        .user-details p {
+            margin: 5px 0;
+            color: #666;
+        }
+
+        .records-section {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .records-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .records-filter {
+            display: flex;
+            gap: 10px;
+        }
+
+        .filter-btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            background: #f5f6fa;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .filter-btn.active {
+            background: #4a90e2;
+            color: white;
+        }
+
+        .records-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .records-table th,
+        .records-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        .records-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+        }
+
+        .back-btn {
+            display: inline-block;
+            padding: 8px 15px;
+            background: #4a90e2;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        .back-btn:hover {
+            background: #357abd;
+        }
+
+        @media (max-width: 768px) {
+            .records-filter {
+                flex-wrap: wrap;
+            }
+            
+            .records-table {
+                display: block;
+                overflow-x: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-btn">
+            <i class="fas fa-arrow-left"></i> 返回首页
+        </a>
+
+        <div class="profile-header">
+            <div class="user-info">
+                <div class="avatar">
+                    <%= user.user_metadata.username ? user.user_metadata.username[0].toUpperCase() : user.email[0].toUpperCase() %>
+                </div>
+                <div class="user-details">
+                    <h2><%= user.user_metadata.username || '未设置用户名' %></h2>
+                    <p><i class="fas fa-envelope"></i> <%= user.email %></p>
+                    <p><i class="fas fa-clock"></i> 注册时间：<%= new Date(user.created_at).toLocaleDateString() %></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="records-section">
+            <div class="records-header">
+                <h3>游戏记录</h3>
+                <div class="records-filter">
+                    <button class="filter-btn active" data-game="all">全部</button>
+                    <% games.forEach(function(game) { %>
+                        <button class="filter-btn" data-game="<%= game.id %>">
+                            <%= game.title %>
+                        </button>
+                    <% }); %>
+                </div>
+            </div>
+
+            <table class="records-table">
+                <thead>
+                    <tr>
+                        <th>游戏</th>
+                        <th>分数</th>
+                        <th>用时</th>
+                        <th>难度</th>
+                        <th>时间</th>
+                    </tr>
+                </thead>
+                <tbody id="recordsBody">
+                    <!-- 记录将通过 JavaScript 动态加载 -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // 加载游戏记录
+        async function loadRecords(gameId = 'all') {
+            try {
+                const response = await fetch(`/records/user${gameId === 'all' ? '' : '/' + gameId}`);
+                if (!response.ok) throw new Error('获取记录失败');
+                
+                const records = await response.json();
+                const tbody = document.getElementById('recordsBody');
+                tbody.innerHTML = records.map(record => `
+                    <tr>
+                        <td>${record.game_name}</td>
+                        <td>${record.score}</td>
+                        <td>${formatTime(record.time_spent)}</td>
+                        <td>${record.level || '-'}</td>
+                        <td>${new Date(record.created_at).toLocaleString()}</td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('加载记录失败:', error);
+            }
+        }
+
+        // 格式化时间
+        function formatTime(ms) {
+            if (!ms) return '-';
+            const seconds = Math.floor(ms / 1000);
+            const minutes = Math.floor(seconds / 60);
+            return `${minutes}分${seconds % 60}秒`;
+        }
+
+        // 添加过滤按钮事件监听
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                loadRecords(btn.dataset.game);
+            });
+        });
+
+        // 初始加载
+        loadRecords();
+    </script>
+</body>
+</html> 

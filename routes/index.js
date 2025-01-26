@@ -1,7 +1,22 @@
 const express = require('express');
 const router = express.Router();
+const supabase = require('../config/supabase');
 
-router.get('/', function(req, res, next) {
+router.get('/', async (req, res) => {
+  // 获取用户信息
+  let user = null;
+  const token = req.cookies['sb-token'];
+  if (token) {
+    try {
+      const { data: { user: userData }, error } = await supabase.auth.getUser(token);
+      if (!error) {
+        user = userData;
+      }
+    } catch (error) {
+      console.error('获取用户信息失败:', error);
+    }
+  }
+
   const games = [
     {
       id: '2048',
@@ -42,7 +57,8 @@ router.get('/', function(req, res, next) {
   
   res.render('index', { 
     title: 'Mind Record',
-    games: games
+    games: games,
+    user: user
   });
 });
 

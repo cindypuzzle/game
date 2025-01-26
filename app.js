@@ -4,10 +4,16 @@ const app = express();
 const cookieParser = require('cookie-parser');
 const authRouter = require('./routes/auth');
 const recordsRouter = require('./routes/records');
+const profileRouter = require('./routes/profile');
 
 // 设置视图引擎
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
+
+// 添加中间件
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 // 静态文件中间件
 app.use(express.static(path.join(__dirname, 'public')));
@@ -18,7 +24,12 @@ const memoryGameRouter = require('./routes/memory_game');
 const magicRingsRouter = require('./routes/magic_rings');
 const spiralGalaxyRouter = require('./routes/spiralGalaxy');
 const slidingPuzzleRouter = require('./routes/sliding_puzzle');
+
+// 添加路由
 app.use('/', indexRouter);
+app.use('/auth', authRouter);
+app.use('/records', recordsRouter);
+app.use('/profile', profileRouter);
 app.use('/game/memory-game', memoryGameRouter);
 app.use('/game/magic-rings', magicRingsRouter);
 app.use('/game/spiral-galaxy', spiralGalaxyRouter);
@@ -42,15 +53,6 @@ app.get('/game/snake', (req, res) => {
 app.get('/game/spiral-galaxy', (req, res) => {
     res.render('spiral_galaxy', { title: '星系重逢' });
 });
-
-// 添加中间件
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
-
-// 添加路由
-app.use('/auth', authRouter);
-app.use('/records', recordsRouter);
 
 // 错误处理中间件
 app.use((err, req, res, next) => {
