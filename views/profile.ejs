@@ -183,10 +183,15 @@
         // 加载游戏记录
         async function loadRecords(gameId = 'all') {
             try {
-                const response = await fetch(`/records/user${gameId === 'all' ? '' : '/' + gameId}`);
-                if (!response.ok) throw new Error('获取记录失败');
+                const response = await fetch(`/profile/records${gameId === 'all' ? '' : '/' + gameId}`);
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || '获取记录失败');
+                }
                 
                 const records = await response.json();
+                console.log('加载的记录:', records);
+                
                 const tbody = document.getElementById('recordsBody');
                 tbody.innerHTML = records.map(record => `
                     <tr>
@@ -199,15 +204,23 @@
                 `).join('');
             } catch (error) {
                 console.error('加载记录失败:', error);
+                const tbody = document.getElementById('recordsBody');
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="text-center text-danger">
+                            加载记录失败: ${error.message}
+                        </td>
+                    </tr>
+                `;
             }
         }
 
-        // 格式化时间
-        function formatTime(ms) {
-            if (!ms) return '-';
-            const seconds = Math.floor(ms / 1000);
-            const minutes = Math.floor(seconds / 60);
-            return `${minutes}分${seconds % 60}秒`;
+        // 格式化时间函数
+        function formatTime(milliseconds) {
+            const minutes = Math.floor(milliseconds / 60000);
+            const seconds = Math.floor((milliseconds % 60000) / 1000);
+            const ms = Math.floor((milliseconds % 1000) / 10);
+            return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(ms).padStart(2, '0')}`;
         }
 
         // 添加过滤按钮事件监听
@@ -219,8 +232,10 @@
             });
         });
 
-        // 初始加载
-        loadRecords();
+        // 页面加载时获取记录
+        document.addEventListener('DOMContentLoaded', () => {
+            loadRecords();
+        });
     </script>
 </body>
 </html> 
