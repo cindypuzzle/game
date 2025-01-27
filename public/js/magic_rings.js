@@ -252,12 +252,7 @@ document.addEventListener('DOMContentLoaded', () => {
         for (let i = 0; i < 4; i++) {
             const currentRing = Array.isArray(rings[i]) ? rings[i] : rings[i].numbers;
             const nextRing = Array.isArray(rings[(i + 1) % 4]) ? rings[(i + 1) % 4] : rings[(i + 1) % 4].numbers;
-            
-            console.log(`Checking ring ${i} and ${(i + 1) % 4}:`);
-            console.log(`  Ring ${i}: ${currentRing}`);
-            console.log(`  Ring ${(i + 1) % 4}: ${nextRing}`);
-            console.log(`  ${currentRing[4]} === ${nextRing[0]} && ${currentRing[5]} === ${nextRing[9]}`);
-            
+                        
             if (currentRing[4] !== nextRing[0] || currentRing[5] !== nextRing[9]) {
                 return false;
             }
@@ -381,9 +376,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 localStorage.setItem('magicRingsHighScore', highScore);
             }
 
+            // 先调用 celebrateSuccess，确保记录保存
+            celebrateSuccess();
+
+            // 然后显示成功消息
             showMessage(`恭喜你！你找到了正确的四环！\n用时：${formatTime(totalTime)}\n尝试次数：${attempts}\n得分：${score}`, 'success');
             updateScoreDisplay();
-            celebrateSuccess();
         } else {
             let errorMessage = '很遗憾，这不是正确的组合。';
             if (!isCorrectChain) {
@@ -502,8 +500,26 @@ document.addEventListener('DOMContentLoaded', () => {
         return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(ms).padStart(2, '0')}`;
     }
 
-    // 添加庆祝动画函数
+    // 修改 celebrateSuccess 函数
     function celebrateSuccess() {
+        // 获取游戏数据用于保存记录
+        const timeSpent = Date.now() - startTimeStamp;
+        const score = calculateScore(timeSpent, attempts);
+        const level = currentDifficulty;
+
+        console.log('准备保存游戏记录:', {
+            timeSpent,
+            score,
+            level,
+            startTimeStamp,
+            attempts
+        });
+
+        // 保存游戏记录
+        saveGameRecord(score, timeSpent, level)
+            .then(() => console.log('游戏记录保存成功'))
+            .catch(err => console.error('保存游戏记录失败:', err));
+
         // 显示成功标题
         const successTitle = document.getElementById('success-title');
         successTitle.classList.add('show');
@@ -573,5 +589,67 @@ document.addEventListener('DOMContentLoaded', () => {
                 requestAnimationFrame(frame);
             }
         }());
+    }
+
+    // 修改 saveGameRecord 函数
+    async function saveGameRecord(score, timeSpent, level) {
+        const recordData = {
+            game_name: 'magic_rings',
+            score: score,
+            time_spent: timeSpent,
+            level: level
+        };
+        
+        console.log('准备发送的记录数据:', recordData);
+        
+        try {
+            const response = await fetch('/records', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(recordData)
+            });
+
+            console.log('API响应状态:', response.status);
+            
+            if (response.status === 401) {
+                // 未登录或会话过期
+                alert('请先登录后再保存记录');
+                window.location.href = '/auth/login'; // 重定向到登录页面
+                return;
+            }
+            
+            if (!response.ok) {
+                const contentType = response.headers.get('content-type');
+                let errorMessage;
+                
+                if (contentType && contentType.includes('application/json')) {
+                    const errorData = await response.json();
+                    errorMessage = errorData.error;
+                } else {
+                    errorMessage = await response.text();
+                }
+                
+                console.error('API错误详情:', errorMessage);
+                throw new Error(`保存记录失败: ${response.status} ${errorMessage}`);
+            }
+
+            const data = await response.json();
+            console.log('API响应数据:', data);
+            return data;
+        } catch (error) {
+            console.error('保存记录时发生错误:', error);
+            console.error('错误堆栈:', error.stack);
+            
+            // 如果是未登录错误，重定向到登录页面
+            if (error.message.includes('401')) {
+                alert('请先登录后再保存记录');
+                window.location.href = '/auth/login';
+                return;
+            }
+            
+            throw error;
+        }
     }
 });

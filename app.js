@@ -6,6 +6,7 @@ const authRouter = require('./routes/auth');
 const recordsRouter = require('./routes/records');
 const profileRouter = require('./routes/profile');
 const session = require('express-session');
+require('dotenv').config();
 
 // 导入用户验证中间件
 const { requireAuth, checkUser } = require('./middleware/authMiddleware');

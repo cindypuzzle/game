@@ -1,18 +1,26 @@
 const { createClient } = require('@supabase/supabase-js');
 require('dotenv').config();
 
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_ANON_KEY;
+// 检查环境变量
+if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY) {
+    console.error('错误: 缺少必要的 Supabase 环境变量');
+    process.exit(1);
+}
 
-const supabase = createClient(supabaseUrl, supabaseKey, {
-    auth: {
-        autoRefreshToken: true,
-        persistSession: true,
-        detectSessionInUrl: true
+// 创建 Supabase 客户端
+const supabase = createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_ANON_KEY,
+    {
+        auth: {
+            autoRefreshToken: true,
+            persistSession: true,
+            detectSessionInUrl: true
+        }
     }
-});
+);
 
-// 简化的连接测试
+// 测试连接并导出
 (async () => {
     try {
         const { data, error } = await supabase.auth.getSession();
@@ -26,4 +34,5 @@ const supabase = createClient(supabaseUrl, supabaseKey, {
     }
 })();
 
-module.exports = { supabase };
+// 确保导出的是正确初始化的客户端实例
+module.exports = supabase;

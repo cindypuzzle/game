@@ -595,8 +595,26 @@
             }
         }
 
-        // 添加庆祝动画函数
+        // 修改 celebrateSuccess 函数，添加调试日志
         function celebrateSuccess() {
+            // 获取游戏数据
+            const timeSpent = Date.now() - startTimeStamp;
+            const score = calculateScore(timeSpent, attempts);
+            const level = currentDifficulty;
+
+            console.log('游戏数据:', {
+                timeSpent,
+                score,
+                level,
+                startTimeStamp,
+                attempts
+            });
+
+            // 保存游戏记录
+            saveGameRecord(score, timeSpent, level)
+                .then(() => console.log('记录保存完成'))
+                .catch(err => console.error('记录保存失败:', err));
+
             // 显示成功标题
             const successTitle = document.getElementById('success-title');
             successTitle.classList.add('show');
@@ -666,6 +684,81 @@
                     requestAnimationFrame(frame);
                 }
             }());
+        }
+
+        // 修改 saveGameRecord 函数，添加更详细的调试信息
+        async function saveGameRecord(score, timeSpent, level) {
+            const recordData = {
+                game_name: 'magic_rings',
+                score: score,
+                time_spent: timeSpent,
+                level: level
+            };
+            
+            console.log('准备发送的记录数据:', recordData);
+            
+            try {
+                const response = await fetch('/records', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(recordData)
+                });
+
+                console.log('API响应状态:', response.status);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('API错误详情:', errorText);
+                    throw new Error(`保存记录失败: ${response.status} ${errorText}`);
+                }
+
+                const data = await response.json();
+                console.log('API响应数据:', data);
+                return data;
+            } catch (error) {
+                console.error('保存记录时发生错误:', error);
+                console.error('错误堆栈:', error.stack);
+                throw error;
+            }
+        }
+
+        // 修改 calculateScore 函数，添加计算过程的日志
+        function calculateScore(timeSpent, attempts) {
+            console.log('计算分数的输入参数:', { timeSpent, attempts });
+            
+            // 基础分数 10000
+            let score = 10000;
+            console.log('基础分数:', score);
+            
+            // 每秒扣除 10 分
+            const timeDeduction = Math.floor(timeSpent / 1000) * 10;
+            score -= timeDeduction;
+            console.log('时间扣分:', timeDeduction, '剩余分数:', score);
+            
+            // 每次尝试扣除 100 分(从第二次尝试开始算)
+            const attemptDeduction = (attempts - 1) * 100;
+            score -= attemptDeduction;
+            console.log('尝试次数扣分:', attemptDeduction, '剩余分数:', score);
+            
+            // 确保分数不为负,且为整数
+            const finalScore = Math.max(0, Math.floor(score));
+            console.log('最终分数:', finalScore);
+            
+            return finalScore;
+        }
+
+        // 在游戏开始时初始化变量
+        function startGame() {
+            startTimeStamp = Date.now();
+            attempts = 0; // 确保 attempts 被正确初始化
+            console.log('游戏开始:', {
+                startTimeStamp,
+                attempts,
+                currentDifficulty
+            });
+            // ... 其他游戏初始化代码 ...
         }
     </script>
 </body>

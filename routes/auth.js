@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { supabase } = require('../config/supabase');
+const supabase = require('../config/supabase');
 
 // 登录页面
 router.get('/', (req, res) => {
@@ -9,8 +9,11 @@ router.get('/', (req, res) => {
 
 // 处理登录请求
 router.post('/login', async (req, res) => {
-    const { email, password } = req.body;
     try {
+        const { email, password } = req.body;
+        
+        console.log('尝试登录:', { email }); // 不要记录密码
+        
         const { data, error } = await supabase.auth.signInWithPassword({
             email,
             password
@@ -18,37 +21,41 @@ router.post('/login', async (req, res) => {
 
         if (error) throw error;
 
-        // 设置用户会话
+        // 设置会话
         req.session.user = data.user;
         
-        res.json({ success: true });
+        console.log('登录成功:', data.user);
+        res.json({ user: data.user });
     } catch (error) {
         console.error('登录错误:', error);
-        res.status(400).json({ 
-            success: false, 
-            error: error.message 
-        });
+        res.status(400).json({ error: error.message });
     }
 });
 
 // 处理注册请求
 router.post('/register', async (req, res) => {
-    const { email, password } = req.body;
     try {
+        const { email, password, username } = req.body;
+        
+        console.log('尝试注册:', { email, username }); // 不要记录密码
+
         const { data, error } = await supabase.auth.signUp({
             email,
-            password
+            password,
+            options: {
+                data: {
+                    username
+                }
+            }
         });
 
         if (error) throw error;
 
-        res.json({ success: true });
+        console.log('注册成功:', data);
+        res.json(data);
     } catch (error) {
         console.error('注册错误:', error);
-        res.status(400).json({ 
-            success: false, 
-            error: error.message 
-        });
+        res.status(400).json({ error: error.message });
     }
 });
 
@@ -57,13 +64,28 @@ router.post('/logout', async (req, res) => {
     try {
         const { error } = await supabase.auth.signOut();
         if (error) throw error;
-        res.json({ success: true });
+
+        // 清除会话
+        req.session.destroy();
+        
+        res.json({ message: '已成功登出' });
     } catch (error) {
         console.error('登出错误:', error);
-        res.status(400).json({ 
-            success: false, 
-            error: error.message 
-        });
+        res.status(400).json({ error: error.message });
+    }
+});
+
+// 获取当前用户
+router.get('/user', async (req, res) => {
+    try {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        
+        if (error) throw error;
+        
+        res.json({ user });
+    } catch (error) {
+        console.error('获取用户信息错误:', error);
+        res.status(400).json({ error: error.message });
     }
 });
 
