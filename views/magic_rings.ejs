@@ -7,22 +7,20 @@
     <style>
         body {
             font-family: 'Arial', sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
             min-height: 100vh;
             margin: 0;
+            padding: 0;
             background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
         }
         #game-container {
             text-align: center;
             background-color: rgba(255, 255, 255, 0.8);
             border-radius: 20px;
-            padding: 40px;
+            padding: 20px;
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
             position: relative;
             max-width: 1200px;
-            margin: 20px;
+            margin: 20px auto;
         }
         h1 {
             color: #333;
@@ -235,20 +233,8 @@
 
         /* 添加帮助按钮样式 */
         .help-button {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            padding: 5px 10px;
-            font-size: 14px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        .help-button:hover {
-            background-color: #45a049;
+            position: static;
+            margin-left: auto;
         }
 
         /* 添加模态框样式 */
@@ -319,12 +305,24 @@
         }
 
         /* 添加顶部导航栏样式 */
-        .top-nav {
+        .nav-bar {
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            width: 100%;
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 10px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 8px 20px;
-            margin-bottom: 20px;
+        }
+
+        .nav-title {
+            margin: 0;
+            font-size: 24px;
         }
 
         /* 修改标题样式 */
@@ -359,11 +357,6 @@
             font-size: 16px;
             cursor: pointer;
             transition: background-color 0.3s;
-        }
-
-        /* 调整游戏容器的内边距 */
-        #game-container {
-            padding: 20px;
         }
 
         /* 修改蒙层样式 */
@@ -526,11 +519,10 @@
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
 </head>
 <body>
+    <%- include('partials/nav') %>
+    
     <div id="game-container">
-        <!-- 添加一个顶部导航栏容器 -->
-        <div class="top-nav">
-            <button onclick="exitGame()" class="exit-button">退出</button>
-            <h1><%= title %></h1>
+        <div class="game-header">
             <button onclick="showHelp()" class="help-button">帮助</button>
         </div>
 

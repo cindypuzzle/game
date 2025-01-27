@@ -5,6 +5,7 @@ const cookieParser = require('cookie-parser');
 const authRouter = require('./routes/auth');
 const recordsRouter = require('./routes/records');
 const profileRouter = require('./routes/profile');
+const session = require('express-session');
 
 // 导入用户验证中间件
 const { requireAuth, checkUser } = require('./middleware/authMiddleware');
@@ -20,6 +21,24 @@ app.use(cookieParser());
 
 // 静态文件中间件
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Session 配置
+app.use(session({
+    secret: process.env.SESSION_SECRET || 'your-secret-key',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    }
+}));
+
+// 用户信息中间件
+app.use((req, res, next) => {
+    // 确保在渲染视图时总是传递用户信息
+    res.locals.user = req.session.user || null;
+    next();
+});
 
 // 路由
 const indexRouter = require('./routes/index');

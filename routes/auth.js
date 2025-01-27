@@ -18,6 +18,9 @@ router.post('/login', async (req, res) => {
 
         if (error) throw error;
 
+        // 设置用户会话
+        req.session.user = data.user;
+        
         res.json({ success: true });
     } catch (error) {
         console.error('登录错误:', error);
