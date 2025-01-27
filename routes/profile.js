@@ -18,7 +18,7 @@ const games = [
 router.get('/', requireAuth, async (req, res) => {
     try {
         res.render('profile', { 
-            title: '个人资料',
+            title: '用户中心',
             user: req.user,
             games: games
         });
