@@ -25,6 +25,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let hintsUsed = 0;  // 添加提示使用次数计数
 
+    let showHintButton = false; // 添加提示按钮显示开关
+
     timerElement = document.getElementById('timer');
 
     let currentDifficulty = 'medium'; // 默认中级难度
@@ -32,6 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 添加难度选择按钮的事件监听
     const difficultyBtns = document.querySelectorAll('.difficulty-btn');
     const difficultyDesc = document.querySelector('.difficulty-desc');
+    const hintToggle = document.getElementById('hint-toggle'); // 添加这行
     
     difficultyBtns.forEach(btn => {
         btn.addEventListener('click', () => {
@@ -47,6 +50,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 '初级：数字范围 1-9' : '中级：数字范围 10-30';
         });
     });
+
+    // 添加提示开关的事件监听
+    if (hintToggle) {
+        hintToggle.addEventListener('change', () => {
+            showHintButton = hintToggle.checked;
+            if (hintButton) {
+                hintButton.style.display = showHintButton ? 'block' : 'none';
+            }
+        });
+    }
 
     // 添加提示按钮事件监听
     if (hintButton) {
@@ -139,9 +152,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
         hintsUsed = 0;  // 重置提示使用次数
         if (hintButton) {
-            hintButton.disabled = false;
-            hintButton.style.opacity = '1';
-            hintButton.textContent = '提示 (4次)';
+            if (showHintButton) {
+                hintButton.style.display = 'block';
+                if (hintButton.disabled) {
+                    hintButton.disabled = false;
+                    hintButton.style.opacity = '1';
+                }
+                hintButton.textContent = '提示 (4次)';
+            } else {
+                hintButton.style.display = 'none';
+            }
         }
     }
 
@@ -512,6 +532,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const score = calculateScore(timeSpent, attempts);
         const level = currentDifficulty;
 
+        // 先将平均用时显示重置为 --:--
+        updateAverageTimeDisplay(null);
+
         // 先显示成功标题
         const successTitle = document.getElementById('success-title');
         successTitle.classList.add('show');
@@ -605,12 +628,13 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log('游戏成功后获取的平均用时数据:', data);
             
             // 更新平均用时显示
-            if (data.avg_time !== null) {
-                updateAverageTimeDisplay(data.avg_time);
+            if (data.hasOwnProperty('avg_time_last_10')) {
+                updateAverageTimeDisplay(data.avg_time_last_10);
             } else {
                 updateAverageTimeDisplay(null);
             }
-
+            
+            return data;
         } catch (error) {
             console.error('游戏成功处理时发生错误:', error);
         }

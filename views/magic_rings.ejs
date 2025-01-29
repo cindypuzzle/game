@@ -554,6 +554,63 @@
         .hint-arrow {
             animation: arrowPulse 1s infinite;
         }
+
+        /* 在难度选择下方添加提示开关 */
+        .hint-toggle-container {
+            margin: 10px 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .hint-switch {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .hint-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .hint-slider {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+            background-color: #ccc;
+            border-radius: 24px;
+            transition: .4s;
+            margin-right: 10px;
+        }
+
+        .hint-slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            border-radius: 50%;
+            transition: .4s;
+        }
+
+        input:checked + .hint-slider {
+            background-color: #4a90e2;
+        }
+
+        input:checked + .hint-slider:before {
+            transform: translateX(26px);
+        }
+
+        .hint-label {
+            font-size: 16px;
+            color: #333;
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
 </head>

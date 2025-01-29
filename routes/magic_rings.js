@@ -21,15 +21,8 @@ router.get('/average-time', requireAuth, async (req, res) => {
     try {
         const { game_name, level } = req.query;
         const userId = req.user?.id;
-        const token = req.cookies.access_token;  // 添加这行用于调试
 
-        console.log('请求参数:', { 
-            game_name, 
-            level, 
-            userId,
-            hasToken: !!token,  // 检查是否有 token
-            user: req.user      // 输出完整的用户信息
-        });
+        console.log('请求参数:', { game_name, level, userId });
 
         if (!userId) {
             console.log('用户未登录');
