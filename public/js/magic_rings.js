@@ -556,6 +556,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }());
     }
 
+    // 修改 updateAverageTimeDisplay 函数
+    function updateAverageTimeDisplay(avgTime) {
+        const avgTimeElement = document.getElementById('avg-time-display');
+        if (avgTimeElement) {
+            if (avgTime === null || avgTime === undefined) {
+                avgTimeElement.textContent = '最近10局平均用时：需要至少10局游戏';
+            } else {
+                avgTimeElement.textContent = `最近10局平均用时：${formatTime(avgTime)}`;
+            }
+        }
+    }
+
     // 修改 saveGameRecord 函数
     async function saveGameRecord(score, timeSpent, level) {
         const recordData = {
@@ -563,7 +575,6 @@ document.addEventListener('DOMContentLoaded', () => {
             score: score,
             time_spent: timeSpent,
             level: level,
-            // 不需要在前端计算 avg_time_last_10，后端会处理
         };
         
         console.log('准备发送的记录数据:', recordData);
@@ -580,9 +591,8 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log('API响应状态:', response.status);
             
             if (response.status === 401) {
-                // 未登录或会话过期
                 alert('请先登录后再保存记录');
-                window.location.href = '/auth/login'; // 重定向到登录页面
+                window.location.href = '/auth/login';
                 return;
             }
             
@@ -603,7 +613,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const data = await response.json();
             
-            // 更新显示平均时间
+            // 只有当 avg_time_last_10 存在且不为 null 时才更新显示
             if (data.hasOwnProperty('avg_time_last_10')) {
                 updateAverageTimeDisplay(data.avg_time_last_10);
             } else {
@@ -614,27 +624,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.error('保存记录时发生错误:', error);
             console.error('错误堆栈:', error.stack);
-            
-            // 如果是未登录错误，重定向到登录页面
-            if (error.message.includes('401')) {
-                alert('请先登录后再保存记录');
-                window.location.href = '/auth/login';
-                return;
-            }
-            
             throw error;
-        }
-    }
-
-    // 添加显示平均时间的函数
-    function updateAverageTimeDisplay(avgTime) {
-        const avgTimeElement = document.getElementById('avg-time-display');
-        if (avgTimeElement) {
-            if (avgTime === null) {
-                avgTimeElement.textContent = '最近10局平均用时：需要至少10局游戏';
-            } else {
-                avgTimeElement.textContent = `最近10局平均用时：${formatTime(avgTime)}`;
-            }
         }
     }
 });
