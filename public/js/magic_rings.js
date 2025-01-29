@@ -51,10 +51,33 @@ document.addEventListener('DOMContentLoaded', () => {
     updateScoreDisplay();
 
     // 修改开始游戏按钮的事件监听
-    startGameBtn.addEventListener('click', () => {
-        startOverlay.style.display = 'none';
-        createRings(); // 使用当前选择的难度创建游戏
-        startTimer();
+    startGameBtn.addEventListener('click', async () => {
+        try {
+            // 修改为正确的路径
+            const response = await fetch(`/game/magic-rings/average-time?game_name=magic_rings&level=${currentDifficulty}`);
+            if (!response.ok) {
+                throw new Error('获取平均用时失败');
+            }
+            const data = await response.json();
+            
+            // 更新平均用时显示
+            if (data.avg_time !== null) {
+                updateAverageTimeDisplay(data.avg_time);
+            } else {
+                updateAverageTimeDisplay(null);
+            }
+
+            // 继续原有的开始游戏逻辑
+            startOverlay.style.display = 'none';
+            createRings();
+            startTimer();
+        } catch (error) {
+            console.error('获取平均用时时发生错误:', error);
+            // 即使获取平均用时失败，也继续开始游戏
+            startOverlay.style.display = 'none';
+            createRings();
+            startTimer();
+        }
     });
 
     // 修改重新开始按钮的处理
@@ -560,8 +583,8 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateAverageTimeDisplay(avgTime) {
         const avgTimeElement = document.getElementById('avg-time-display');
         if (avgTimeElement) {
-            if (avgTime === null || avgTime === undefined) {
-                avgTimeElement.textContent = '最近10局平均用时：需要至少10局游戏';
+            if (avgTime === null) {
+                avgTimeElement.textContent = `最近10局平均用时：--:--`;
             } else {
                 avgTimeElement.textContent = `最近10局平均用时：${formatTime(avgTime)}`;
             }
