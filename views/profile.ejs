@@ -481,6 +481,99 @@
                 font-size: 1.5em;
             }
         }
+
+        /* 昵称修改部分的样式 */
+        .username-display {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .edit-username-btn {
+            background: none;
+            border: none;
+            color: #4a90e2;
+            cursor: pointer;
+            padding: 5px;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+        }
+
+        .edit-username-btn:hover {
+            color: #357abd;
+            transform: scale(1.1);
+        }
+
+        #update-username-form {
+            margin: 10px 0;
+        }
+
+        #update-username-form input {
+            padding: 8px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            width: 200px;
+            transition: all 0.3s ease;
+        }
+
+        #update-username-form input:focus {
+            border-color: #4a90e2;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(74,144,226,0.1);
+        }
+
+        .form-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .save-btn, .cancel-btn {
+            padding: 6px 12px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .save-btn {
+            background: #4a90e2;
+            color: white;
+        }
+
+        .save-btn:hover {
+            background: #357abd;
+        }
+
+        .cancel-btn {
+            background: #e0e0e0;
+            color: #666;
+        }
+
+        .cancel-btn:hover {
+            background: #d0d0d0;
+        }
+
+        @media (max-width: 768px) {
+            .username-display {
+                justify-content: center;
+            }
+
+            #update-username-form {
+                text-align: center;
+            }
+
+            #update-username-form input {
+                width: 100%;
+                max-width: 300px;
+            }
+
+            .form-buttons {
+                justify-content: center;
+            }
+        }
     </style>
 
     <!-- 在 body 标签最后添加渐入动画 -->
@@ -519,7 +612,21 @@
                     <%= user.user_metadata.username ? user.user_metadata.username[0].toUpperCase() : user.email[0].toUpperCase() %>
                 </div>
                 <div class="user-details">
-                    <h2><%= user.user_metadata.username || '未设置用户名' %></h2>
+                    <div class="username-display">
+                        <h2 id="current-username"><%= user.user_metadata.username || '未设置用户名' %></h2>
+                        <button class="edit-username-btn" onclick="toggleUsernameEdit()">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                    </div>
+                    <form id="update-username-form" style="display: none;">
+                        <input type="text" id="username" name="username" 
+                               value="<%= user.user_metadata.username || '' %>" 
+                               placeholder="请输入新的昵称" required>
+                        <div class="form-buttons">
+                            <button type="submit" class="save-btn">保存</button>
+                            <button type="button" class="cancel-btn" onclick="toggleUsernameEdit()">取消</button>
+                        </div>
+                    </form>
                     <p><i class="fas fa-envelope"></i> <%= user.email %></p>
                     <p><i class="fas fa-clock"></i> 注册时间：<%= new Date(user.created_at).toLocaleDateString() %></p>
                 </div>
@@ -665,6 +772,52 @@
             document.getElementById('totalTime').textContent = 
                 `${Math.floor(totalTimeSpent / 3600000)}h ${Math.floor((totalTimeSpent % 3600000) / 60000)}m`;
         }
+
+        function toggleUsernameEdit() {
+            const usernameDisplay = document.getElementById('current-username');
+            const usernameForm = document.getElementById('update-username-form');
+            const usernameInput = document.getElementById('username');
+
+            if (usernameForm.style.display === 'none') {
+                usernameForm.style.display = 'block';
+                usernameDisplay.style.display = 'none';
+                usernameInput.focus();
+            } else {
+                usernameForm.style.display = 'none';
+                usernameDisplay.style.display = 'block';
+                usernameInput.value = usernameDisplay.textContent;
+            }
+        }
+
+        document.getElementById('update-username-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            
+            try {
+                const response = await fetch('/auth/update-username', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    document.getElementById('current-username').textContent = username;
+                    toggleUsernameEdit();
+                    // 更新头像显示的首字母
+                    document.querySelector('.avatar').textContent = username[0].toUpperCase();
+                    alert('昵称更新成功！');
+                } else {
+                    alert(data.error || '更新失败，请重试');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('更新失败，请重试');
+            }
+        });
     </script>
 </body>
 </html> 

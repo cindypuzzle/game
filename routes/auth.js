@@ -205,4 +205,26 @@ router.post('/verify-email', async (req, res) => {
   }
 });
 
+router.post('/update-username', async (req, res) => {
+  try {
+    const { username } = req.body;
+    const { user } = req.session;
+
+    if (!user) {
+      return res.status(401).json({ error: '未登录' });
+    }
+
+    const { error } = await supabase.auth.updateUser({
+      data: { username }
+    });
+
+    if (error) throw error;
+
+    res.json({ success: true, message: '用户名更新成功' });
+  } catch (error) {
+    console.error('更新用户名失败:', error);
+    res.status(500).json({ error: '更新用户名失败' });
+  }
+});
+
 module.exports = router; 
