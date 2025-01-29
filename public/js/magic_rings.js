@@ -512,6 +512,77 @@ document.addEventListener('DOMContentLoaded', () => {
         const score = calculateScore(timeSpent, attempts);
         const level = currentDifficulty;
 
+        // 先显示成功标题
+        const successTitle = document.getElementById('success-title');
+        successTitle.classList.add('show');
+        setTimeout(() => {
+            successTitle.classList.remove('show');
+        }, 2000);
+
+        // 立即开始放礼花
+        const duration = 3 * 1000;
+        const animationEnd = Date.now() + duration;
+
+        // 创建密集的礼花效果
+        const interval = setInterval(function() {
+            const timeLeft = animationEnd - Date.now();
+            
+            if (timeLeft <= 0) {
+                return clearInterval(interval);
+            }
+
+            // 随机位置发射礼花
+            confetti({
+                particleCount: 3,
+                angle: 60,
+                spread: 55,
+                origin: { x: 0 },
+                colors: ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff']
+            });
+            confetti({
+                particleCount: 3,
+                angle: 120,
+                spread: 55,
+                origin: { x: 1 },
+                colors: ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff']
+            });
+        }, 50);
+
+        // 添加中间爆发效果
+        confetti({
+            particleCount: 100,
+            spread: 70,
+            origin: { y: 0.6 },
+            colors: ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff']
+        });
+
+        // 添加螺旋效果
+        const end = Date.now() + (1 * 1000);
+        const colors = ['#ff0000', '#00ff00', '#0000ff'];
+
+        (function frame() {
+            confetti({
+                particleCount: 2,
+                angle: 60,
+                spread: 55,
+                origin: { x: 0 },
+                colors: colors
+            });
+            
+            confetti({
+                particleCount: 2,
+                angle: 120,
+                spread: 55,
+                origin: { x: 1 },
+                colors: colors
+            });
+
+            if (Date.now() < end) {
+                requestAnimationFrame(frame);
+            }
+        }());
+
+        // 在展示庆祝效果的同时，异步保存记录和更新数据
         try {
             // 保存游戏记录
             await saveGameRecord(score, timeSpent, level);
@@ -540,84 +611,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 updateAverageTimeDisplay(null);
             }
 
-            // 显示成功标题
-            const successTitle = document.getElementById('success-title');
-            successTitle.classList.add('show');
-            setTimeout(() => {
-                successTitle.classList.remove('show');
-            }, 2000);
-
-            // 发射礼花
-            const duration = 3 * 1000;
-            const animationEnd = Date.now() + duration;
-
-            // 创建密集的礼花效果
-            const interval = setInterval(function() {
-                const timeLeft = animationEnd - Date.now();
-                
-                if (timeLeft <= 0) {
-                    return clearInterval(interval);
-                }
-
-                // 随机位置发射礼花
-                confetti({
-                    particleCount: 3,
-                    angle: 60,
-                    spread: 55,
-                    origin: { x: 0 },
-                    colors: ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff']
-                });
-                confetti({
-                    particleCount: 3,
-                    angle: 120,
-                    spread: 55,
-                    origin: { x: 1 },
-                    colors: ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff']
-                });
-            }, 50);
-
-            // 添加中间爆发效果
-            confetti({
-                particleCount: 100,
-                spread: 70,
-                origin: { y: 0.6 },
-                colors: ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff']
-            });
-
-            // 添加螺旋效果
-            const end = Date.now() + (1 * 1000);
-            const colors = ['#ff0000', '#00ff00', '#0000ff'];
-
-            (function frame() {
-                confetti({
-                    particleCount: 2,
-                    angle: 60,
-                    spread: 55,
-                    origin: { x: 0 },
-                    colors: colors
-                });
-                
-                confetti({
-                    particleCount: 2,
-                    angle: 120,
-                    spread: 55,
-                    origin: { x: 1 },
-                    colors: colors
-                });
-
-                if (Date.now() < end) {
-                    requestAnimationFrame(frame);
-                }
-            }());
-
         } catch (error) {
             console.error('游戏成功处理时发生错误:', error);
-            // 即使获取平均用时失败，也继续显示成功动画
-            const successTitle = document.getElementById('success-title');
-            successTitle.classList.add('show');
-            setTimeout(() => {
-                successTitle.classList.remove('show');
-            }, 2000);
         }
     }
 
