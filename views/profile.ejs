@@ -365,8 +365,8 @@
             .records-table td::before {
                 content: attr(data-label);
                 font-weight: 600;
-                width: 100px;
-                min-width: 100px;
+                width: 120px;  /* 增加标签宽度以适应新的列 */
+                min-width: 120px;
                 color: #4a90e2;
                 font-size: 14px;
             }
@@ -407,6 +407,12 @@
 
             .records-filter::-webkit-scrollbar-thumb:hover {
                 background: #357abd;
+            }
+
+            /* 优化平均时间显示 */
+            td[data-label="近10局平均"] {
+                color: #666;
+                font-size: 0.9em;
             }
         }
 
@@ -557,13 +563,14 @@
                         <th>游戏</th>
                         <th>分数</th>
                         <th>用时</th>
+                        <th>近10局平均</th>
                         <th>难度</th>
                         <th>时间</th>
                     </tr>
                 </thead>
                 <tbody id="recordsBody">
                     <tr>
-                        <td colspan="5">
+                        <td colspan="6">
                             <div class="loading">
                                 <div class="loading-spinner"></div>
                             </div>
@@ -580,7 +587,7 @@
             const tbody = document.getElementById('recordsBody');
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="5">
+                    <td colspan="6">
                         <div class="loading">
                             <div class="loading-spinner"></div>
                         </div>
@@ -603,6 +610,7 @@
                         <td data-label="游戏">${record.game_name}</td>
                         <td data-label="分数">${record.score}</td>
                         <td data-label="用时">${formatTime(record.time_spent)}</td>
+                        <td data-label="近10局平均">${record.avg_time_last_10 ? formatTime(record.avg_time_last_10) : '-'}</td>
                         <td data-label="难度">${record.level || '-'}</td>
                         <td data-label="时间">${new Date(record.created_at).toLocaleString()}</td>
                     </tr>
@@ -616,7 +624,7 @@
                 console.error('加载记录失败:', error);
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="5" style="text-align: center; color: #dc3545; padding: 20px;">
+                        <td colspan="6" style="text-align: center; color: #dc3545; padding: 20px;">
                             加载记录失败: ${error.message}
                         </td>
                     </tr>

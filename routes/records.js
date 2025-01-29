@@ -22,29 +22,51 @@ router.post('/', auth, async (req, res) => {
             level
         });
 
+        // 获取用户最近10条游戏记录的平均时间
+        const { data: recentRecords, error: selectError } = await supabase
+            .from('game_records')
+            .select('time_spent')
+            .eq('user_id', user_id)
+            .eq('game_name', game_name)
+            .order('created_at', { ascending: false })
+            .limit(10);
+
+        if (selectError) {
+            console.error('获取记录失败:', selectError);
+            return res.status(500).json({ error: '获取记录失败' });
+        }
+
+        // 计算平均时间（包括当前这一次）
+        const allTimes = [time_spent, ...recentRecords.map(record => record.time_spent)];
+        const avgTime = Math.floor(allTimes.reduce((a, b) => a + b, 0) / allTimes.length);
+
         const { data, error } = await supabase
             .from('game_records')
             .insert([
-                { 
+                {
                     user_id,
                     game_name,
                     score,
                     time_spent,
-                    level
+                    level,
+                    avg_time_last_10: avgTime
                 }
             ])
             .select();
 
         if (error) {
-            console.error('Supabase 错误:', error);
-            return res.status(400).json({ error: error.message });
+            console.error('保存记录失败:', error);
+            return res.status(500).json({ error: '保存记录失败' });
         }
 
-        console.log('保存的记录:', data);
-        res.json(data[0]);
+        res.json({ 
+            success: true, 
+            record: data[0],
+            avg_time_last_10: avgTime
+        });
     } catch (error) {
-        console.error('保存记录失败:', error);
-        res.status(500).json({ error: error.message });
+        console.error('处理记录时出错:', error);
+        res.status(500).json({ error: '服务器内部错误' });
     }
 });
 

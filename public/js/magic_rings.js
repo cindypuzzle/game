@@ -69,16 +69,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 添加提示按钮事件监听器
-    if (hintButton) {
-        hintButton.addEventListener('click', () => {
-            console.log('Hint button clicked');
-            showHint();
-        });
-    } else {
-        console.error('Hint button not found');
-    }
-
     // 修改 createRings 函数，移除自动开始计时的部分
     function createRings() {
         console.log('Creating rings');
@@ -435,31 +425,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 4500);
     }
 
-    function showHint() {
-        const unselectedTargetRings = chainedRings.filter(ring => 
-            !selectedRings.some(selectedRing => selectedRing.numbers.every((num, index) => num === ring[index]))
-        );
-
-        if (unselectedTargetRings.length > 0) {
-            const hintRing = unselectedTargetRings[0];
-            const hintElement = rings.find(ring => ring.numbers.every((num, index) => num === hintRing[index])).element;
-            hintElement.classList.add('hint');
-            setTimeout(() => hintElement.classList.remove('hint'), 2000);
-        }
-
-        messageElement.textContent = `提示：目标和为 ${targetSum}。寻找首尾相连的圆环。`;
-        messageElement.className = 'hint';
-
-        // 使用淡出效果
-        setTimeout(() => {
-            messageElement.classList.add('fade-out');
-            setTimeout(() => {
-                messageElement.textContent = '';
-                messageElement.className = '';
-            }, 500); // 等待淡出动画完成
-        }, 4500); // 4.5秒后开始淡出
-    }
-
     // 修改计时器相关函数
     function startTimer() {
         timerElement = document.getElementById('timer');
@@ -597,7 +562,8 @@ document.addEventListener('DOMContentLoaded', () => {
             game_name: 'magic_rings',
             score: score,
             time_spent: timeSpent,
-            level: level
+            level: level,
+            // 不需要在前端计算 avg_time_last_10，后端会处理
         };
         
         console.log('准备发送的记录数据:', recordData);
@@ -636,7 +602,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const data = await response.json();
-            console.log('API响应数据:', data);
+            
+            // 如果返回了平均时间，可以在界面上显示
+            if (data.avg_time_last_10) {
+                updateAverageTimeDisplay(data.avg_time_last_10);
+            }
+            
             return data;
         } catch (error) {
             console.error('保存记录时发生错误:', error);
@@ -650,6 +621,14 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             
             throw error;
+        }
+    }
+
+    // 添加显示平均时间的函数
+    function updateAverageTimeDisplay(avgTime) {
+        const avgTimeElement = document.getElementById('avg-time-display');
+        if (avgTimeElement) {
+            avgTimeElement.textContent = `最近10局平均用时：${formatTime(avgTime)}`;
         }
     }
 });
