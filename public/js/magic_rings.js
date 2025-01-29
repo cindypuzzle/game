@@ -603,9 +603,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const data = await response.json();
             
-            // 如果返回了平均时间，可以在界面上显示
-            if (data.avg_time_last_10) {
+            // 更新显示平均时间
+            if (data.hasOwnProperty('avg_time_last_10')) {
                 updateAverageTimeDisplay(data.avg_time_last_10);
+            } else {
+                updateAverageTimeDisplay(null);
             }
             
             return data;
@@ -628,7 +630,11 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateAverageTimeDisplay(avgTime) {
         const avgTimeElement = document.getElementById('avg-time-display');
         if (avgTimeElement) {
-            avgTimeElement.textContent = `最近10局平均用时：${formatTime(avgTime)}`;
+            if (avgTime === null) {
+                avgTimeElement.textContent = '最近10局平均用时：需要至少10局游戏';
+            } else {
+                avgTimeElement.textContent = `最近10局平均用时：${formatTime(avgTime)}`;
+            }
         }
     }
 });
