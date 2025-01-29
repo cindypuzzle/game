@@ -507,94 +507,118 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // 修改 celebrateSuccess 函数
-    function celebrateSuccess() {
-        // 获取游戏数据用于保存记录
+    async function celebrateSuccess() {
         const timeSpent = Date.now() - startTimeStamp;
         const score = calculateScore(timeSpent, attempts);
         const level = currentDifficulty;
 
-        console.log('准备保存游戏记录:', {
-            timeSpent,
-            score,
-            level,
-            startTimeStamp,
-            attempts
-        });
-
-        // 保存游戏记录
-        saveGameRecord(score, timeSpent, level)
-            .then(() => console.log('游戏记录保存成功'))
-            .catch(err => console.error('保存游戏记录失败:', err));
-
-        // 显示成功标题
-        const successTitle = document.getElementById('success-title');
-        successTitle.classList.add('show');
-        setTimeout(() => {
-            successTitle.classList.remove('show');
-        }, 2000);
-
-        // 发射礼花
-        const duration = 3 * 1000;
-        const animationEnd = Date.now() + duration;
-
-        // 创建密集的礼花效果
-        const interval = setInterval(function() {
-            const timeLeft = animationEnd - Date.now();
+        try {
+            // 保存游戏记录
+            await saveGameRecord(score, timeSpent, level);
             
-            if (timeLeft <= 0) {
-                return clearInterval(interval);
+            // 获取最新的平均用时
+            const response = await fetch(`/game/magic-rings/average-time?game_name=magic_rings&level=${currentDifficulty}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${getCookie('access_token')}`
+                },
+                credentials: 'include'
+            });
+
+            if (!response.ok) {
+                throw new Error('获取平均用时失败');
             }
 
-            // 随机位置发射礼花
-            confetti({
-                particleCount: 3,
-                angle: 60,
-                spread: 55,
-                origin: { x: 0 },
-                colors: ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff']
-            });
-            confetti({
-                particleCount: 3,
-                angle: 120,
-                spread: 55,
-                origin: { x: 1 },
-                colors: ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff']
-            });
-        }, 50);
-
-        // 添加中间爆发效果
-        confetti({
-            particleCount: 100,
-            spread: 70,
-            origin: { y: 0.6 },
-            colors: ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff']
-        });
-
-        // 添加螺旋效果
-        const end = Date.now() + (1 * 1000);
-        const colors = ['#ff0000', '#00ff00', '#0000ff'];
-
-        (function frame() {
-            confetti({
-                particleCount: 2,
-                angle: 60,
-                spread: 55,
-                origin: { x: 0 },
-                colors: colors
-            });
+            const data = await response.json();
+            console.log('游戏成功后获取的平均用时数据:', data);
             
+            // 更新平均用时显示
+            if (data.avg_time !== null) {
+                updateAverageTimeDisplay(data.avg_time);
+            } else {
+                updateAverageTimeDisplay(null);
+            }
+
+            // 显示成功标题
+            const successTitle = document.getElementById('success-title');
+            successTitle.classList.add('show');
+            setTimeout(() => {
+                successTitle.classList.remove('show');
+            }, 2000);
+
+            // 发射礼花
+            const duration = 3 * 1000;
+            const animationEnd = Date.now() + duration;
+
+            // 创建密集的礼花效果
+            const interval = setInterval(function() {
+                const timeLeft = animationEnd - Date.now();
+                
+                if (timeLeft <= 0) {
+                    return clearInterval(interval);
+                }
+
+                // 随机位置发射礼花
+                confetti({
+                    particleCount: 3,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0 },
+                    colors: ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff']
+                });
+                confetti({
+                    particleCount: 3,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1 },
+                    colors: ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff']
+                });
+            }, 50);
+
+            // 添加中间爆发效果
             confetti({
-                particleCount: 2,
-                angle: 120,
-                spread: 55,
-                origin: { x: 1 },
-                colors: colors
+                particleCount: 100,
+                spread: 70,
+                origin: { y: 0.6 },
+                colors: ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff']
             });
 
-            if (Date.now() < end) {
-                requestAnimationFrame(frame);
-            }
-        }());
+            // 添加螺旋效果
+            const end = Date.now() + (1 * 1000);
+            const colors = ['#ff0000', '#00ff00', '#0000ff'];
+
+            (function frame() {
+                confetti({
+                    particleCount: 2,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0 },
+                    colors: colors
+                });
+                
+                confetti({
+                    particleCount: 2,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1 },
+                    colors: colors
+                });
+
+                if (Date.now() < end) {
+                    requestAnimationFrame(frame);
+                }
+            }());
+
+        } catch (error) {
+            console.error('游戏成功处理时发生错误:', error);
+            // 即使获取平均用时失败，也继续显示成功动画
+            const successTitle = document.getElementById('success-title');
+            successTitle.classList.add('show');
+            setTimeout(() => {
+                successTitle.classList.remove('show');
+            }, 2000);
+        }
     }
 
     // 修改 updateAverageTimeDisplay 函数
