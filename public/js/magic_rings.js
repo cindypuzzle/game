@@ -23,6 +23,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let startTimeStamp;  // 使用时间戳来计算精确时间
     let timerElement;
 
+    let hintsUsed = 0;  // 添加提示使用次数计数
+
     timerElement = document.getElementById('timer');
 
     let currentDifficulty = 'medium'; // 默认中级难度
@@ -46,6 +48,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // 添加提示按钮事件监听
+    if (hintButton) {
+        hintButton.addEventListener('click', showHint);
+    }
+
     // 初始加载时就创建游戏
     createRings();
     updateScoreDisplay();
@@ -53,17 +60,30 @@ document.addEventListener('DOMContentLoaded', () => {
     // 修改开始游戏按钮的事件监听
     startGameBtn.addEventListener('click', async () => {
         try {
-            // 修改为正确的路径
-            const response = await fetch(`/game/magic-rings/average-time?game_name=magic_rings&level=${currentDifficulty}`);
+            console.log('请求平均用时数据，难度:', currentDifficulty);
+            const response = await fetch(`/game/magic-rings/average-time?game_name=magic_rings&level=${currentDifficulty}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    // 添加认证 token
+                    'Authorization': `Bearer ${getCookie('access_token')}`
+                },
+                credentials: 'include'  // 确保发送 cookies
+            });
+            
             if (!response.ok) {
                 throw new Error('获取平均用时失败');
             }
+            
             const data = await response.json();
+            console.log('收到的平均用时数据:', data);
             
             // 更新平均用时显示
             if (data.avg_time !== null) {
+                console.log('显示平均用时:', data.avg_time);
                 updateAverageTimeDisplay(data.avg_time);
             } else {
+                console.log('平均用时为null，显示默认值');
                 updateAverageTimeDisplay(null);
             }
 
@@ -73,6 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
             startTimer();
         } catch (error) {
             console.error('获取平均用时时发生错误:', error);
+            updateAverageTimeDisplay(null);
             // 即使获取平均用时失败，也继续开始游戏
             startOverlay.style.display = 'none';
             createRings();
@@ -115,6 +136,13 @@ document.addEventListener('DOMContentLoaded', () => {
         startTime = new Date();
         attempts = 0;
         updateScoreDisplay();
+
+        hintsUsed = 0;  // 重置提示使用次数
+        if (hintButton) {
+            hintButton.disabled = false;
+            hintButton.style.opacity = '1';
+            hintButton.textContent = '提示 (4次)';
+        }
     }
 
     function generateValidRings() {
@@ -408,20 +436,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function calculateScore(timeInMs, attempts) {
-        // 确保参数都是数字
-        timeInMs = Number(timeInMs);
-        attempts = Number(attempts);
-        
-        // 基础分数为10000
         let score = 10000;
-        
-        // 每秒扣除10分（使用毫秒计算）
         score -= Math.floor(timeInMs / 1000) * 10;
-        
-        // 每次尝试扣除100分（从第二次尝试开始算）
         score -= (attempts - 1) * 100;
-        
-        // 确保分数不为负，且为整数
+        score -= hintsUsed * 200;  // 每次使用提示扣除200分
         return Math.max(0, Math.floor(score));
     }
 
@@ -583,6 +601,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateAverageTimeDisplay(avgTime) {
         const avgTimeElement = document.getElementById('avg-time-display');
         if (avgTimeElement) {
+            console.log('更新平均用时显示:', { avgTime });
             if (avgTime === null) {
                 avgTimeElement.textContent = `最近10局平均用时：--:--`;
             } else {
@@ -606,8 +625,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch('/records', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${getCookie('access_token')}`
                 },
+                credentials: 'include',
                 body: JSON.stringify(recordData)
             });
 
@@ -648,6 +669,118 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('保存记录时发生错误:', error);
             console.error('错误堆栈:', error.stack);
             throw error;
+        }
+    }
+
+    // 添加获取 cookie 的辅助函数
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+        return null;
+    }
+
+    // 修改 showHint 函数
+    function showHint() {
+        hintsUsed++;
+        
+        // 如果已经选择了一些圆环，保留已选择的正确圆环
+        let correctSelectedRings = [];
+        if (selectedRings.length > 0) {
+            // 检查已选择的圆环是否正确
+            correctSelectedRings = selectedRings.filter(ring => {
+                return chainedRings.some(correctRing => 
+                    JSON.stringify(correctRing) === JSON.stringify(ring.numbers)
+                );
+            });
+            
+            // 清除错误选择的圆环
+            selectedRings.forEach(ring => {
+                if (!correctSelectedRings.includes(ring)) {
+                    ring.element.classList.remove('selected');
+                    const orderNumber = ring.element.querySelector('.order-number');
+                    orderNumber.style.display = 'none';
+                }
+            });
+        }
+        
+        selectedRings = correctSelectedRings;
+        selectionOrder = selectedRings.length;
+
+        // 找到下一个应该选择的圆环
+        let nextRing = null;
+        if (selectedRings.length === 0) {
+            // 如果没有选择任何圆环，随机选择一个正确的起始圆环
+            for (let ring of rings) {
+                if (chainedRings.some(correctRing => 
+                    JSON.stringify(correctRing) === JSON.stringify(ring.numbers)
+                )) {
+                    nextRing = ring;
+                    break;
+                }
+            }
+        } else {
+            // 根据已选择的圆环找到下一个正确的圆环
+            const lastSelected = selectedRings[selectedRings.length - 1];
+            const lastSelectedIndex = chainedRings.findIndex(ring => 
+                JSON.stringify(ring) === JSON.stringify(lastSelected.numbers)
+            );
+            
+            if (lastSelectedIndex !== -1) {
+                const nextCorrectRing = chainedRings[(lastSelectedIndex + 1) % 4];
+                nextRing = rings.find(ring => 
+                    JSON.stringify(ring.numbers) === JSON.stringify(nextCorrectRing)
+                );
+            }
+        }
+
+        if (nextRing) {
+            // 高亮显示提示的圆环
+            nextRing.element.classList.add('hint');
+            
+            // 添加提示箭头
+            const arrow = document.createElement('div');
+            arrow.className = 'hint-arrow';
+            if (selectedRings.length > 0) {
+                const lastRing = selectedRings[selectedRings.length - 1].element;
+                const lastRect = lastRing.getBoundingClientRect();
+                const nextRect = nextRing.element.getBoundingClientRect();
+                
+                // 计算箭头位置和角度
+                const containerRect = ringsContainer.getBoundingClientRect();
+                const startX = lastRect.left + lastRect.width/2 - containerRect.left;
+                const startY = lastRect.top + lastRect.height/2 - containerRect.top;
+                const endX = nextRect.left + nextRect.width/2 - containerRect.left;
+                const endY = nextRect.top + nextRect.height/2 - containerRect.top;
+                
+                const angle = Math.atan2(endY - startY, endX - startX) * 180 / Math.PI;
+                const length = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2));
+                
+                arrow.style.left = `${startX}px`;
+                arrow.style.top = `${startY}px`;
+                arrow.style.width = `${length}px`;
+                arrow.style.transform = `rotate(${angle}deg)`;
+                
+                ringsContainer.appendChild(arrow);
+            }
+            
+            // 3秒后移除提示效果
+            setTimeout(() => {
+                nextRing.element.classList.remove('hint');
+                if (arrow.parentNode) {
+                    arrow.parentNode.removeChild(arrow);
+                }
+            }, 3000);
+
+            // 更新提示按钮文本，显示剩余提示次数
+            const remainingHints = 4 - hintsUsed;
+            hintButton.textContent = `提示 (${remainingHints}次)`;
+            
+            // 如果用完所有提示，禁用提示按钮
+            if (hintsUsed >= 4) {
+                hintButton.disabled = true;
+                hintButton.style.opacity = '0.5';
+            }
         }
     }
 });

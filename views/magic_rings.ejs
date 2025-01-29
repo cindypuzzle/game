@@ -494,6 +494,66 @@
                 transform: translate(-50%, -50%) scale(1);
             }
         }
+
+        .hint-button {
+            background-color: #ffa500;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 8px 15px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .hint-button:hover {
+            background-color: #ff8c00;
+        }
+
+        .hint-button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        .hint {
+            animation: hintPulse 1s infinite;
+        }
+
+        @keyframes hintPulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 165, 0, 0.7); }
+            70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(255, 165, 0, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 165, 0, 0); }
+        }
+
+        .hint-arrow {
+            position: absolute;
+            height: 4px;
+            background: linear-gradient(90deg, #ffa500, #ff8c00);
+            transform-origin: left center;
+            pointer-events: none;
+            z-index: 1000;
+        }
+        
+        .hint-arrow::after {
+            content: '';
+            position: absolute;
+            right: -10px;
+            top: -8px;
+            border-left: 20px solid #ff8c00;
+            border-top: 10px solid transparent;
+            border-bottom: 10px solid transparent;
+        }
+        
+        /* 添加箭头动画 */
+        @keyframes arrowPulse {
+            0% { opacity: 0.4; }
+            50% { opacity: 1; }
+            100% { opacity: 0.4; }
+        }
+        
+        .hint-arrow {
+            animation: arrowPulse 1s infinite;
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
 </head>
@@ -507,6 +567,7 @@
 
         <div id="game-info">
             <div id="timer">时间：00:00</div>
+            <button id="hint-button" class="hint-button">提示 (4次)</button>
             <div id="score-display">最高分：0</div>
             <div id="avg-time-display">最近10局平均用时：--:--</div>
         </div>

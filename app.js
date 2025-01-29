@@ -6,6 +6,7 @@ const authRouter = require('./routes/auth');
 const recordsRouter = require('./routes/records');
 const profileRouter = require('./routes/profile');
 const session = require('express-session');
+const supabase = require('./config/supabase');
 require('dotenv').config();
 
 // 导入用户验证中间件
@@ -34,10 +35,20 @@ app.use(session({
     }
 }));
 
-// 用户信息中间件
-app.use((req, res, next) => {
-    // 确保在渲染视图时总是传递用户信息
-    res.locals.user = req.session.user || null;
+// 统一的用户身份验证中间件
+app.use(async (req, res, next) => {
+    const token = req.cookies.access_token;
+    if (token) {
+        try {
+            const { data: { user }, error } = await supabase.auth.getUser(token);
+            if (!error && user) {
+                req.user = user;
+                res.locals.user = user;
+            }
+        } catch (err) {
+            console.error('验证用户token失败:', err);
+        }
+    }
     next();
 });
 
