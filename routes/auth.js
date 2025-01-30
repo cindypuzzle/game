@@ -12,7 +12,7 @@ router.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
         
-        console.log('尝试登录:', { email }); // 不要记录密码
+        console.log('尝试登录:', { email });
         
         const { data, error } = await supabase.auth.signInWithPassword({
             email,
@@ -24,7 +24,21 @@ router.post('/login', async (req, res) => {
         // 设置会话
         req.session.user = data.user;
         
-        console.log('登录成功:', data.user);
+        // 设置 access_token cookie
+        res.cookie('access_token', data.session.access_token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production', // 在生产环境中使用 HTTPS
+            sameSite: 'Lax',
+            domain: process.env.COOKIE_DOMAIN || undefined, // 添加域名配置
+            path: '/',
+            maxAge: 7 * 24 * 60 * 60 * 1000 // 7天
+        });
+        
+        console.log('登录成功，设置cookie:', {
+            token: data.session.access_token?.substring(0, 10) + '...',
+            domain: process.env.COOKIE_DOMAIN || '默认域名'
+        });
+        
         res.json({ user: data.user });
     } catch (error) {
         console.error('登录错误:', error);

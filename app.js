@@ -19,7 +19,7 @@ app.set('view engine', 'ejs');
 // 添加中间件
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
+app.use(cookieParser(process.env.SESSION_SECRET || 'your-secret-key'));
 
 // 静态文件中间件
 app.use(express.static(path.join(__dirname, 'public')));
@@ -31,6 +31,9 @@ app.use(session({
     saveUninitialized: false,
     cookie: {
         secure: process.env.NODE_ENV === 'production',
+        sameSite: 'Lax',
+        domain: process.env.COOKIE_DOMAIN || undefined,
+        path: '/',
         maxAge: 24 * 60 * 60 * 1000 // 24 hours
     }
 }));
@@ -49,6 +52,17 @@ app.use(async (req, res, next) => {
             console.error('验证用户token失败:', err);
         }
     }
+    next();
+});
+
+// 添加请求日志中间件
+app.use((req, res, next) => {
+    console.log('请求信息:', {
+        path: req.path,
+        cookies: req.cookies,
+        headers: req.headers,
+        session: req.session
+    });
     next();
 });
 
