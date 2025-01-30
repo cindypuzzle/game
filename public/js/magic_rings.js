@@ -690,42 +690,53 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('准备发送的记录数据:', recordData);
         
         try {
-            // 获取 token
             const token = getCookie('access_token');
-            console.log('认证 token:', token ? '存在' : '不存在');
+            console.log('获取到的 token:', token);
             
+            if (!token) {
+                console.warn('未找到访问令牌，尝试重定向到登录页面');
+                window.location.href = '/auth';
+                return;
+            }
+
+            const headers = {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            };
+            
+            console.log('发送请求的 headers:', headers);
+
             const response = await fetch('/records', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}` // 添加认证头
-                },
-                credentials: 'include', // 确保发送 cookies
+                headers: headers,
+                credentials: 'include',
                 body: JSON.stringify(recordData)
             });
 
             console.log('API响应状态:', response.status);
             
-            // 先获取响应文本
+            if (response.status === 401) {
+                console.warn('认证失败，重定向到登录页面');
+                window.location.href = '/auth/login';
+                return;
+            }
+
             const responseText = await response.text();
             console.log('原始响应内容:', responseText);
 
-            // 如果响应为空，直接返回
             if (!responseText.trim()) {
                 console.log('响应内容为空');
                 return null;
             }
 
-            // 尝试解析 JSON
             try {
                 const data = JSON.parse(responseText);
                 console.log('解析后的响应数据:', data);
                 return data;
             } catch (parseError) {
                 console.error('解析 JSON 失败:', parseError);
-                // 如果响应包含 HTML，可能是重定向到登录页面
                 if (responseText.includes('<!DOCTYPE html>')) {
-                    console.log('收到 HTML 响应，可能需要重新登录');
+                    console.log('收到 HTML 响应，重定向到登录页面');
                     window.location.href = '/auth/login';
                     return null;
                 }
@@ -733,24 +744,33 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (error) {
             console.error('保存记录时发生错误:', error);
-            console.error('错误类型:', error.constructor.name);
-            console.error('错误信息:', error.message);
-            console.error('错误堆栈:', error.stack);
+            if (error.message.includes('Failed to fetch')) {
+                console.warn('网络请求失败，可能需要重新登录');
+                window.location.href = '/auth/login';
+                return;
+            }
             throw error;
         }
     }
 
-    // 添加获取 cookie 的辅助函数
+    // 修改 getCookie 函数实现
     function getCookie(name) {
-        const value = `; ${document.cookie}`;
-        const parts = value.split(`; ${name}=`);
-        if (parts.length === 2) {
-            const cookieValue = parts.pop().split(';').shift();
-            console.log(`获取到 cookie ${name}:`, cookieValue ? '存在' : '不存在');
-            return cookieValue;
+        try {
+            // 更详细的 cookie 解析
+            const cookies = document.cookie.split(';');
+            for (let cookie of cookies) {
+                const [cookieName, cookieValue] = cookie.trim().split('=');
+                if (cookieName === name) {
+                    console.log(`成功获取到 ${name} cookie:`, cookieValue);
+                    return cookieValue;
+                }
+            }
+            console.log(`未找到 ${name} cookie, 当前所有 cookies:`, document.cookie);
+            return null;
+        } catch (error) {
+            console.error('获取 cookie 时发生错误:', error);
+            return null;
         }
-        console.log(`未找到 cookie ${name}`);
-        return null;
     }
 
     // 修改 showHint 函数
