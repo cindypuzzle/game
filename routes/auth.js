@@ -120,7 +120,7 @@ router.get('/callback', async (req, res) => {
     }
 
     // 处理带有 token 的请求
-    const { access_token, refresh_token, error, error_description } = req.query;
+    const { access_token, refresh_token, error, error_description, type } = req.query;
 
     // 检查是否有错误
     if (error) {
@@ -164,6 +164,9 @@ router.get('/callback', async (req, res) => {
       throw new Error('无法获取用户信息');
     }
 
+    // 设置会话
+    req.session.user = user;
+    
     console.log('验证成功，用户信息:', user);
 
     // 重定向到主页
