@@ -104,6 +104,14 @@ router.get('/callback', async (req, res) => {
 
     // 首先渲染一个中间页面来处理 hash
     if (!req.query.access_token) {
+      // 检查是否是带有 # 的错误路径
+      const hashPath = req.path.match(/#(.+)$/);
+      if (hashPath) {
+        // 如果是，重定向到正确的回调路径
+        const correctPath = '/auth/callback?' + hashPath[1];
+        return res.redirect(correctPath);
+      }
+
       return res.send(`
         <script>
           // 从 URL hash 中获取参数
