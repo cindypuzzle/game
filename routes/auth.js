@@ -45,16 +45,29 @@ router.post('/register', async (req, res) => {
             options: {
                 data: {
                     username
-                }
+                },
+                emailRedirectTo: `${process.env.APP_URL}/auth/callback`
             }
         });
 
         if (error) throw error;
 
-        console.log('注册成功:', data);
+        // 注册成功后直接登录用户
+        const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+            email,
+            password
+        });
+
+        if (loginError) throw loginError;
+
+        // 设置会话
+        req.session.user = loginData.user;
+
         res.json({
             success: true,
-            message: '注册成功！请查看您的邮箱（包括垃圾邮件文件夹）并点击验证链接完成注册。'
+            message: '注册成功！',
+            email: email, // 返回邮箱以便前端使用
+            redirectTo: '/' // 直接重定向到首页
         });
     } catch (error) {
         console.error('注册错误:', error);

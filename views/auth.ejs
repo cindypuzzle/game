@@ -223,7 +223,11 @@
                 if (response.ok) {
                     document.getElementById('message').textContent = data.message;
                     document.getElementById('message').className = 'success-message';
-                    document.getElementById('registerForm').reset();
+                    
+                    // 注册成功后自动重定向
+                    if (data.redirectTo) {
+                        window.location.href = data.redirectTo;
+                    }
                 } else {
                     throw new Error(data.error);
                 }

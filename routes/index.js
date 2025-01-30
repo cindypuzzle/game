@@ -10,7 +10,7 @@ router.get('/', checkUser, async (req, res) => {
             { id: 'snake', title: '贪吃蛇', description: '经典的贪吃蛇游戏' },
             { id: 'guess-number', title: '猜数字', description: '猜一个1到100之间的数字' },
             { id: 'memory-game', title: '记忆游戏', description: '考验记忆力的翻牌游戏' },
-            { id: 'magic-rings', title: '魔法圈', description: '用魔法圈创造美丽的图案' },
+            { id: 'magic-rings', title: '数圆', description: '寻找四个首尾相连且数字之和相等的圆环' },
             { id: 'spiral-galaxy', title: '星系重逢', description: '帮助两个星系找到彼此' },
             { id: 'sliding-puzzle', title: '滑块拼图', description: '经典的滑块拼图游戏' }
         ];

@@ -7,11 +7,11 @@ router.get('/', checkUser, async (req, res) => {
     try {
         // 确保用户信息正确传递给视图
         res.render('magic_rings', { 
-            title: '神奇四环',
+            title: '数圆',
             user: res.locals.user
         });
     } catch (error) {
-        console.error('渲染神奇四环页面失败:', error);
+        console.error('渲染数圆页面失败:', error);
         res.status(500).send('服务器错误');
     }
 });
