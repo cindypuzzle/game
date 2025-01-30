@@ -76,6 +76,11 @@
             background-color: #45a049;
         }
 
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
         .error-message {
             color: #f44336;
             margin-top: 10px;
@@ -86,6 +91,24 @@
             color: #4CAF50;
             margin-top: 10px;
             text-align: center;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #ffffff;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
         }
     </style>
 </head>
@@ -121,7 +144,10 @@
                 <label for="registerPassword">密码</label>
                 <input type="password" id="registerPassword" required>
             </div>
-            <button type="submit">注册</button>
+            <button type="submit" id="registerButton">
+                <span class="loading-spinner" style="display: none;"></span>
+                <span class="button-text">注册</span>
+            </button>
         </form>
 
         <div id="message" class="error-message"></div>
@@ -170,6 +196,16 @@
 
         document.getElementById('registerForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+            
+            const button = document.getElementById('registerButton');
+            const spinner = button.querySelector('.loading-spinner');
+            const buttonText = button.querySelector('.button-text');
+            
+            // 禁用按钮并显示加载状态
+            button.disabled = true;
+            spinner.style.display = 'inline-block';
+            buttonText.textContent = '注册中...';
+            
             try {
                 const response = await fetch('/auth/register', {
                     method: 'POST',
@@ -187,12 +223,18 @@
                 if (response.ok) {
                     document.getElementById('message').textContent = data.message;
                     document.getElementById('message').className = 'success-message';
+                    document.getElementById('registerForm').reset();
                 } else {
                     throw new Error(data.error);
                 }
             } catch (error) {
                 document.getElementById('message').textContent = error.message;
                 document.getElementById('message').className = 'error-message';
+            } finally {
+                // 恢复按钮状态
+                button.disabled = false;
+                spinner.style.display = 'none';
+                buttonText.textContent = '注册';
             }
         });
     </script>

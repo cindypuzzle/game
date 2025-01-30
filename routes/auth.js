@@ -52,7 +52,10 @@ router.post('/register', async (req, res) => {
         if (error) throw error;
 
         console.log('注册成功:', data);
-        res.json(data);
+        res.json({
+            success: true,
+            message: '注册成功！请查看您的邮箱（包括垃圾邮件文件夹）并点击验证链接完成注册。'
+        });
     } catch (error) {
         console.error('注册错误:', error);
         res.status(400).json({ error: error.message });
