@@ -678,7 +678,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // 修改 saveGameRecord 函数
+    // 修改 saveGameRecord 函数，添加认证 token
     async function saveGameRecord(score, timeSpent, level) {
         const recordData = {
             game_name: 'magic_rings',
@@ -690,6 +690,7 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('准备发送的记录数据:', recordData);
         
         try {
+            // 获取 token
             const token = getCookie('access_token');
             console.log('认证 token:', token ? '存在' : '不存在');
             
@@ -697,14 +698,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
+                    'Authorization': `Bearer ${token}` // 添加认证头
                 },
-                credentials: 'include',
+                credentials: 'include', // 确保发送 cookies
                 body: JSON.stringify(recordData)
             });
 
             console.log('API响应状态:', response.status);
-            console.log('API响应头:', Object.fromEntries(response.headers.entries()));
             
             // 先获取响应文本
             const responseText = await response.text();
