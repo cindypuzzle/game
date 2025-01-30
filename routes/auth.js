@@ -95,37 +95,54 @@ router.get('/user', async (req, res) => {
 // 修改回调路由
 router.get('/callback', async (req, res) => {
   try {
-    console.log('=== 验证回调调试信息 ===');
-    console.log('Query 参数:', req.query);
-    console.log('URL:', req.url);
-    console.log('Hash:', req.hash);
+    console.log('\n=== 验证回调详细调试信息 ===');
+    console.log('1. 原始请求信息:');
     console.log('完整URL:', req.originalUrl);
-    console.log('========================');
+    console.log('路径:', req.path);
+    console.log('查询参数:', req.query);
+    console.log('请求头:', req.headers);
+    console.log('------------------------');
 
     // 首先渲染一个中间页面来处理 hash
     if (!req.query.access_token) {
+      console.log('2. 未找到 access_token, 检查路径...');
+      
       // 检查是否是带有 # 的错误路径
       const hashPath = req.path.match(/#(.+)$/);
+      console.log('路径匹配结果:', hashPath);
+      
       if (hashPath) {
-        // 如果是，重定向到正确的回调路径
+        console.log('3. 发现 hash 路径，准备重定向');
         const correctPath = '/auth/callback?' + hashPath[1];
+        console.log('重定向到:', correctPath);
         return res.redirect(correctPath);
       }
 
+      console.log('4. 返回处理 hash 的页面');
       return res.send(`
         <script>
+          console.log('=== 客户端 hash 处理 ===');
+          console.log('当前 URL:', window.location.href);
+          console.log('Hash:', window.location.hash);
+          
           // 从 URL hash 中获取参数
           const hashParams = new URLSearchParams(window.location.hash.substring(1));
           const params = Object.fromEntries(hashParams.entries());
+          console.log('解析的参数:', params);
           
           // 将参数添加到 URL query 中
           const newUrl = '/auth/callback?' + new URLSearchParams(params).toString();
+          console.log('新的 URL:', newUrl);
           
           // 重定向到新的 URL
           window.location.replace(newUrl);
         </script>
       `);
     }
+
+    console.log('5. 找到 access_token, 处理验证:');
+    console.log('Token:', access_token?.substring(0, 20) + '...');
+    console.log('类型:', type);
 
     // 处理带有 token 的请求
     const { access_token, refresh_token, error, error_description, type } = req.query;
@@ -181,15 +198,24 @@ router.get('/callback', async (req, res) => {
     res.redirect('/');
 
   } catch (error) {
-    console.error('验证失败详情:', {
-      error: error.message,
-      stack: error.stack,
-      query: req.query
+    console.error('\n=== 验证失败详细信息 ===');
+    console.error('错误消息:', error.message);
+    console.error('错误堆栈:', error.stack);
+    console.error('请求参数:', {
+      path: req.path,
+      query: req.query,
+      headers: req.headers
     });
+    console.error('========================\n');
     
     res.render('auth-callback', {
       message: '验证失败：' + error.message,
-      redirect: '/auth'
+      redirect: '/auth',
+      debug: {
+        path: req.path,
+        query: JSON.stringify(req.query),
+        error: error.message
+      }
     });
   }
 });
