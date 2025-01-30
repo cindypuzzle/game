@@ -690,7 +690,6 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('准备发送的记录数据:', recordData);
         
         try {
-            // 添加认证 token 到请求头
             const token = getCookie('access_token');
             console.log('认证 token:', token ? '存在' : '不存在');
             
@@ -700,41 +699,37 @@ document.addEventListener('DOMContentLoaded', () => {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                credentials: 'include',  // 确保发送 cookies
+                credentials: 'include',
                 body: JSON.stringify(recordData)
             });
 
             console.log('API响应状态:', response.status);
             console.log('API响应头:', Object.fromEntries(response.headers.entries()));
             
-            // 检查响应的内容类型
-            const contentType = response.headers.get('content-type');
-            console.log('响应内容类型:', contentType);
-            
-            if (response.status === 401) {
-                console.log('用户未登录，重定向到登录页面');
-                window.location.href = '/auth/login';
-                return;
+            // 先获取响应文本
+            const responseText = await response.text();
+            console.log('原始响应内容:', responseText);
+
+            // 如果响应为空，直接返回
+            if (!responseText.trim()) {
+                console.log('响应内容为空');
+                return null;
             }
 
-            if (!response.ok) {
-                const responseText = await response.text();
-                console.error('API错误响应内容:', responseText);
-                throw new Error(`保存记录失败: ${response.status} ${responseText}`);
-            }
-
-            // 尝试解析响应内容
-            let responseText;
+            // 尝试解析 JSON
             try {
-                responseText = await response.text();
-                console.log('原始响应内容:', responseText);
                 const data = JSON.parse(responseText);
                 console.log('解析后的响应数据:', data);
                 return data;
             } catch (parseError) {
-                console.error('解析响应内容失败:', parseError);
-                console.error('原始响应内容:', responseText);
-                throw parseError;
+                console.error('解析 JSON 失败:', parseError);
+                // 如果响应包含 HTML，可能是重定向到登录页面
+                if (responseText.includes('<!DOCTYPE html>')) {
+                    console.log('收到 HTML 响应，可能需要重新登录');
+                    window.location.href = '/auth/login';
+                    return null;
+                }
+                throw new Error(`无法解析响应: ${responseText}`);
             }
         } catch (error) {
             console.error('保存记录时发生错误:', error);
