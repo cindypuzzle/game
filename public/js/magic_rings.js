@@ -545,115 +545,123 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 修改 celebrateSuccess 函数
     async function celebrateSuccess() {
-        const timeSpent = Date.now() - startTimeStamp;
-        const score = calculateScore(timeSpent, attempts);
-        const level = currentDifficulty;
-
-        // 先将平均用时显示重置为 --:--
-        updateAverageTimeDisplay(null);
-
-        // 先显示成功标题
-        const successTitle = document.getElementById('success-title');
-        successTitle.classList.add('show');
-        setTimeout(() => {
-            successTitle.classList.remove('show');
-        }, 2000);
-
-        // 立即开始放礼花
-        const duration = 3 * 1000;
-        const animationEnd = Date.now() + duration;
-
-        // 创建密集的礼花效果
-        const interval = setInterval(function() {
-            const timeLeft = animationEnd - Date.now();
-            
-            if (timeLeft <= 0) {
-                return clearInterval(interval);
-            }
-
-            // 随机位置发射礼花
-            confetti({
-                particleCount: 3,
-                angle: 60,
-                spread: 55,
-                origin: { x: 0 },
-                colors: ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff']
-            });
-            confetti({
-                particleCount: 3,
-                angle: 120,
-                spread: 55,
-                origin: { x: 1 },
-                colors: ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff']
-            });
-        }, 50);
-
-        // 添加中间爆发效果
-        confetti({
-            particleCount: 100,
-            spread: 70,
-            origin: { y: 0.6 },
-            colors: ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff']
-        });
-
-        // 添加螺旋效果
-        const end = Date.now() + (1 * 1000);
-        const colors = ['#ff0000', '#00ff00', '#0000ff'];
-
-        (function frame() {
-            confetti({
-                particleCount: 2,
-                angle: 60,
-                spread: 55,
-                origin: { x: 0 },
-                colors: colors
-            });
-            
-            confetti({
-                particleCount: 2,
-                angle: 120,
-                spread: 55,
-                origin: { x: 1 },
-                colors: colors
-            });
-
-            if (Date.now() < end) {
-                requestAnimationFrame(frame);
-            }
-        }());
-
-        // 在展示庆祝效果的同时，异步保存记录和更新数据
         try {
-            // 保存游戏记录
-            await saveGameRecord(score, timeSpent, level);
-            
-            // 获取最新的平均用时
-            const response = await fetch(`/game/magic-rings/average-time?game_name=magic_rings&level=${currentDifficulty}`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${getCookie('access_token')}`
-                },
-                credentials: 'include'
+            const timeSpent = Date.now() - startTimeStamp;
+            const score = calculateScore(timeSpent, attempts);
+            const level = currentDifficulty;
+
+            console.log('游戏成功数据:', {
+                timeSpent,
+                score,
+                level,
+                startTimeStamp,
+                attempts
             });
 
-            if (!response.ok) {
-                throw new Error('获取平均用时失败');
+            // 先保存记录
+            await saveGameRecord(score, timeSpent, level);
+            console.log('记录保存成功');
+
+            // 获取最新的平均用时
+            try {
+                const response = await fetch(`/game/magic-rings/average-time?game_name=magic_rings&level=${level}`, {
+                    headers: {
+                        'Authorization': `Bearer ${getCookie('access_token')}`
+                    },
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('获取到的平均用时数据:', data);
+                    if (data.avg_time !== null) {
+                        updateAverageTimeDisplay(data.avg_time);
+                    }
+                } else {
+                    console.error('获取平均用时失败:', response.status);
+                }
+            } catch (error) {
+                console.error('获取平均用时出错:', error);
             }
 
-            const data = await response.json();
-            console.log('游戏成功后获取的平均用时数据:', data);
-            
-            // 更新平均用时显示
-            if (data.hasOwnProperty('avg_time_last_10')) {
-                updateAverageTimeDisplay(data.avg_time_last_10);
-            } else {
-                updateAverageTimeDisplay(null);
-            }
-            
-            return data;
+            // 显示成功标题
+            const successTitle = document.getElementById('success-title');
+            successTitle.classList.add('show');
+            setTimeout(() => {
+                successTitle.classList.remove('show');
+            }, 2000);
+
+            // 显示成功消息
+            showMessage(`恭喜你！你找到了正确的四环！\n用时：${formatTime(timeSpent)}\n尝试次数：${attempts}\n得分：${score}`, 'success');
+            updateScoreDisplay();
+
+            // 开始庆祝动画
+            const duration = 3 * 1000;
+            const animationEnd = Date.now() + duration;
+
+            // 创建密集的礼花效果
+            const interval = setInterval(function() {
+                const timeLeft = animationEnd - Date.now();
+                
+                if (timeLeft <= 0) {
+                    return clearInterval(interval);
+                }
+
+                // 随机位置发射礼花
+                confetti({
+                    particleCount: 3,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0 },
+                    colors: ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff']
+                });
+                confetti({
+                    particleCount: 3,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1 },
+                    colors: ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff']
+                });
+            }, 50);
+
+            // 添加中间爆发效果
+            confetti({
+                particleCount: 100,
+                spread: 70,
+                origin: { y: 0.6 },
+                colors: ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff']
+            });
+
+            // 添加螺旋效果
+            const end = Date.now() + (1 * 1000);
+            const colors = ['#ff0000', '#00ff00', '#0000ff'];
+
+            (function frame() {
+                confetti({
+                    particleCount: 2,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0 },
+                    colors: colors
+                });
+                
+                confetti({
+                    particleCount: 2,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1 },
+                    colors: colors
+                });
+
+                if (Date.now() < end) {
+                    requestAnimationFrame(frame);
+                }
+            }());
+
         } catch (error) {
             console.error('游戏成功处理时发生错误:', error);
+            // 即使保存记录失败，也继续显示成功动画
+            showMessage('游戏完成！但保存记录时出现错误。', 'warning');
         }
     }
 
@@ -676,57 +684,62 @@ document.addEventListener('DOMContentLoaded', () => {
             game_name: 'magic_rings',
             score: score,
             time_spent: timeSpent,
-            level: level,
+            level: level
         };
         
         console.log('准备发送的记录数据:', recordData);
         
         try {
+            // 添加认证 token 到请求头
+            const token = getCookie('access_token');
+            console.log('认证 token:', token ? '存在' : '不存在');
+            
             const response = await fetch('/records', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${getCookie('access_token')}`
+                    'Authorization': `Bearer ${token}`
                 },
-                credentials: 'include',
+                credentials: 'include',  // 确保发送 cookies
                 body: JSON.stringify(recordData)
             });
 
             console.log('API响应状态:', response.status);
+            console.log('API响应头:', Object.fromEntries(response.headers.entries()));
+            
+            // 检查响应的内容类型
+            const contentType = response.headers.get('content-type');
+            console.log('响应内容类型:', contentType);
             
             if (response.status === 401) {
-                alert('请先登录后再保存记录');
+                console.log('用户未登录，重定向到登录页面');
                 window.location.href = '/auth/login';
                 return;
             }
-            
+
             if (!response.ok) {
-                const contentType = response.headers.get('content-type');
-                let errorMessage;
-                
-                if (contentType && contentType.includes('application/json')) {
-                    const errorData = await response.json();
-                    errorMessage = errorData.error;
-                } else {
-                    errorMessage = await response.text();
-                }
-                
-                console.error('API错误详情:', errorMessage);
-                throw new Error(`保存记录失败: ${response.status} ${errorMessage}`);
+                const responseText = await response.text();
+                console.error('API错误响应内容:', responseText);
+                throw new Error(`保存记录失败: ${response.status} ${responseText}`);
             }
 
-            const data = await response.json();
-            
-            // 只有当 avg_time_last_10 存在且不为 null 时才更新显示
-            if (data.hasOwnProperty('avg_time_last_10')) {
-                updateAverageTimeDisplay(data.avg_time_last_10);
-            } else {
-                updateAverageTimeDisplay(null);
+            // 尝试解析响应内容
+            let responseText;
+            try {
+                responseText = await response.text();
+                console.log('原始响应内容:', responseText);
+                const data = JSON.parse(responseText);
+                console.log('解析后的响应数据:', data);
+                return data;
+            } catch (parseError) {
+                console.error('解析响应内容失败:', parseError);
+                console.error('原始响应内容:', responseText);
+                throw parseError;
             }
-            
-            return data;
         } catch (error) {
             console.error('保存记录时发生错误:', error);
+            console.error('错误类型:', error.constructor.name);
+            console.error('错误信息:', error.message);
             console.error('错误堆栈:', error.stack);
             throw error;
         }
@@ -736,7 +749,12 @@ document.addEventListener('DOMContentLoaded', () => {
     function getCookie(name) {
         const value = `; ${document.cookie}`;
         const parts = value.split(`; ${name}=`);
-        if (parts.length === 2) return parts.pop().split(';').shift();
+        if (parts.length === 2) {
+            const cookieValue = parts.pop().split(';').shift();
+            console.log(`获取到 cookie ${name}:`, cookieValue ? '存在' : '不存在');
+            return cookieValue;
+        }
+        console.log(`未找到 cookie ${name}`);
         return null;
     }
 
