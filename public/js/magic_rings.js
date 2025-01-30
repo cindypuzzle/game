@@ -27,6 +27,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let showHintButton = false; // 添加提示按钮显示开关
 
+    let isPenaltyActive = false;
+
     timerElement = document.getElementById('timer');
 
     let currentDifficulty = 'medium'; // 默认中级难度
@@ -368,6 +370,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function toggleRingSelection(ring) {
+        // 如果正在罚时，不允许选择圆环
+        if (isPenaltyActive) return;
+        
         const index = selectedRings.findIndex(r => r.element === ring);
         const orderNumber = ring.querySelector('.order-number');
         
@@ -444,6 +449,9 @@ document.addEventListener('DOMContentLoaded', () => {
             showMessage(`恭喜你！你找到了正确的四环！\n用时：${formatTime(totalTime)}\n尝试次数：${attempts}\n得分：${score}`, 'success');
             updateScoreDisplay();
         } else {
+            // 显示罚时蒙层
+            showPenalty();
+            
             let errorMessage = '很遗憾，这不是正确的组合。';
             if (!isCorrectChain) {
                 errorMessage += ' 圆环之间的连接不正确。';
@@ -452,6 +460,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 errorMessage += ' 圆环的数字之和不等于目标值。';
             }
             showMessage(errorMessage, 'error');
+            
+            // 清除所有选中的圆环
+            selectedRings.forEach(ring => {
+                ring.element.classList.remove('selected');
+                const orderNumber = ring.element.querySelector('.order-number');
+                orderNumber.style.display = 'none';
+            });
+            selectedRings = [];
+            selectionOrder = 0;
         }
     }
 
@@ -825,5 +842,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 hintButton.style.opacity = '0.5';
             }
         }
+    }
+
+    // 添加罚时相关函数
+    function showPenalty() {
+        if (isPenaltyActive) return;
+        
+        isPenaltyActive = true;
+        const penaltyOverlay = document.getElementById('penalty-overlay');
+        const penaltyTimer = penaltyOverlay.querySelector('.penalty-timer');
+        let timeLeft = 10;
+
+        // 显示罚时蒙层
+        penaltyOverlay.style.display = 'flex';
+
+        // 开始倒计时
+        const countdownInterval = setInterval(() => {
+            timeLeft--;
+            penaltyTimer.textContent = timeLeft;
+
+            if (timeLeft <= 0) {
+                clearInterval(countdownInterval);
+                penaltyOverlay.style.display = 'none';
+                isPenaltyActive = false;
+                penaltyTimer.textContent = '10';
+            }
+        }, 1000);
     }
 });

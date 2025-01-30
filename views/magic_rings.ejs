@@ -611,6 +611,43 @@
             font-size: 16px;
             color: #333;
         }
+
+        /* 添加罚时蒙层样式 */
+        .penalty-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 0, 0, 0.2);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+
+        .penalty-content {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+            border: 2px solid #ff0000;
+        }
+
+        .penalty-content h2 {
+            color: #ff0000;
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+
+        .penalty-timer {
+            font-size: 3em;
+            color: #ff0000;
+            font-weight: bold;
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
 </head>
@@ -664,6 +701,15 @@
             </div>
             <p class="difficulty-desc">中级：数字范围 10-30</p>
             <button id="start-game-btn">开始游戏</button>
+        </div>
+    </div>
+
+    <!-- 在 body 中添加罚时蒙层，放在其他蒙层后面 -->
+    <div id="penalty-overlay" class="penalty-overlay">
+        <div class="penalty-content">
+            <h2>答案错误</h2>
+            <p>请等待10秒后继续</p>
+            <div class="penalty-timer">10</div>
         </div>
     </div>
 
