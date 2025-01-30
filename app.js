@@ -32,15 +32,16 @@ app.use(session({
     cookie: {
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'Lax',
-        domain: process.env.NODE_ENV === 'production' ? process.env.COOKIE_DOMAIN : undefined,
         path: '/',
         maxAge: 24 * 60 * 60 * 1000, // 24 hours
-        httpOnly: true // 增加安全性
+        httpOnly: true
     }
 }));
 
 // 统一的用户身份验证中间件
 app.use(async (req, res, next) => {
+    console.log('当前域名:', req.get('host'));
+    console.log('Cookie 设置:', req.cookies);
     const token = req.cookies.access_token;
     if (token) {
         try {
