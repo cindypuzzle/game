@@ -105,38 +105,60 @@ router.get('/callback', async (req, res) => {
 
     // 首先渲染一个中间页面来处理 hash
     if (!req.query.access_token) {
-      console.log('2. 未找到 access_token, 检查路径...');
+      console.log('2. 未找到 access_token, 返回处理页面');
       
-      // 检查是否是带有 # 的错误路径
-      const hashPath = req.path.match(/#(.+)$/);
-      console.log('路径匹配结果:', hashPath);
-      
-      if (hashPath) {
-        console.log('3. 发现 hash 路径，准备重定向');
-        const correctPath = '/auth/callback?' + hashPath[1];
-        console.log('重定向到:', correctPath);
-        return res.redirect(correctPath);
-      }
-
-      console.log('4. 返回处理 hash 的页面');
       return res.send(`
-        <script>
-          console.log('=== 客户端 hash 处理 ===');
-          console.log('当前 URL:', window.location.href);
-          console.log('Hash:', window.location.hash);
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>处理验证</title>
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body>
+          <div id="message">正在处理验证...</div>
           
-          // 从 URL hash 中获取参数
-          const hashParams = new URLSearchParams(window.location.hash.substring(1));
-          const params = Object.fromEntries(hashParams.entries());
-          console.log('解析的参数:', params);
-          
-          // 将参数添加到 URL query 中
-          const newUrl = '/auth/callback?' + new URLSearchParams(params).toString();
-          console.log('新的 URL:', newUrl);
-          
-          // 重定向到新的 URL
-          window.location.replace(newUrl);
-        </script>
+          <script>
+            console.log('=== 客户端 hash 处理 ===');
+            console.log('当前 URL:', window.location.href);
+            console.log('Hash:', window.location.hash);
+            
+            function handleCallback() {
+              try {
+                // 获取 hash 或 search 参数
+                let params = {};
+                if (window.location.hash) {
+                  // 处理 hash 参数
+                  const hashParams = new URLSearchParams(window.location.hash.substring(1));
+                  params = Object.fromEntries(hashParams.entries());
+                } else if (window.location.search) {
+                  // 处理 search 参数
+                  const searchParams = new URLSearchParams(window.location.search);
+                  params = Object.fromEntries(searchParams.entries());
+                }
+                
+                console.log('解析的参数:', params);
+                
+                if (params.access_token) {
+                  // 构建新的 URL
+                  const newUrl = '/auth/callback?' + new URLSearchParams(params).toString();
+                  console.log('重定向到:', newUrl);
+                  window.location.replace(newUrl);
+                } else {
+                  document.getElementById('message').textContent = '验证失败：未找到访问令牌';
+                  setTimeout(() => window.location.href = '/auth', 3000);
+                }
+              } catch (error) {
+                console.error('处理回调错误:', error);
+                document.getElementById('message').textContent = '验证失败：' + error.message;
+                setTimeout(() => window.location.href = '/auth', 3000);
+              }
+            }
+
+            // 延迟执行以确保 URL 已完全加载
+            setTimeout(handleCallback, 100);
+          </script>
+        </body>
+        </html>
       `);
     }
 
