@@ -1,6 +1,4 @@
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('DOMContentLoaded event fired');
-
     const ringsContainer = document.getElementById('rings-container');
     const messageElement = document.getElementById('message');
     const hintButton = document.getElementById('hint-button');
@@ -25,7 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let hintsUsed = 0;  // 添加提示使用次数计数
 
-    let showHintButton = true; // 添加提示按钮显示开关
+    let showHintButton = false; // 添加提示按钮显示开关
 
     let isPenaltyActive = false;
 
@@ -75,7 +73,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // 修改开始游戏按钮的事件监听
     startGameBtn.addEventListener('click', async () => {
         try {
-            console.log('请求平均用时数据，难度:', currentDifficulty);
             const response = await fetch(`/game/magic-rings/average-time?game_name=magic_rings&level=${currentDifficulty}`, {
                 method: 'GET',
                 headers: {
@@ -91,14 +88,11 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             
             const data = await response.json();
-            console.log('收到的平均用时数据:', data);
             
             // 更新平均用时显示
             if (data.avg_time !== null) {
-                console.log('显示平均用时:', data.avg_time);
                 updateAverageTimeDisplay(data.avg_time);
             } else {
-                console.log('平均用时为null，显示默认值');
                 updateAverageTimeDisplay(null);
             }
 
@@ -119,7 +113,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // 修改重新开始按钮的处理
     if (restartButton) {
         restartButton.addEventListener('click', () => {
-            console.log('Restart button clicked');
             stopTimer();
             createRings(); // 重新创建游戏
             startOverlay.style.display = 'flex';
@@ -130,7 +123,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 修改 createRings 函数，移除自动开始计时的部分
     function createRings() {
-        console.log('Creating rings');
         ringsContainer.innerHTML = '';
         rings = [];
         selectedRings = [];
@@ -174,9 +166,6 @@ document.addEventListener('DOMContentLoaded', () => {
         let targetSum = currentDifficulty === 'easy' ? 
             Math.floor(Math.random() * 31) + 40 : // 初级：40-70
             Math.floor(Math.random() * 51) + 150;  // 中级：150-200
-
-        console.log('Target sum:', targetSum);
-        console.log('Current difficulty:', currentDifficulty);
 
         // 生成四个符合条件的目标圆环
         while (!chainedRings) {
@@ -427,12 +416,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const sums = selectedRings.map(ring => ring.numbers.reduce((a, b) => a + b, 0));
         const isEqualSum = sums.every(sum => sum === targetSum);
 
-        console.log('Selected rings:', selectedRings.map(ring => ring.numbers));
-        console.log('Sums:', sums);
-        console.log('Target sum:', targetSum);
-        console.log('Is equal sum:', isEqualSum);
-        console.log('Is correct chain:', isCorrectChain);
-
         if (isCorrectChain && isEqualSum) {
             const totalTime = stopTimer();  // 获取总用时（毫秒）
             const score = calculateScore(totalTime, attempts);
@@ -642,11 +625,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const data = await response.json();
-            console.log('游戏成功后获取的平均用时数据:', data);
             
             // 更新平均用时显示
-            if (data.hasOwnProperty('avg_time_last_10')) {
-                updateAverageTimeDisplay(data.avg_time_last_10);
+            if (data.avg_time !== null) {
+                updateAverageTimeDisplay(data.avg_time);
             } else {
                 updateAverageTimeDisplay(null);
             }
@@ -661,7 +643,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateAverageTimeDisplay(avgTime) {
         const avgTimeElement = document.getElementById('avg-time-display');
         if (avgTimeElement) {
-            console.log('更新平均用时显示:', { avgTime });
             if (avgTime === null) {
                 avgTimeElement.textContent = `最近10局平均用时：--:--`;
             } else {
@@ -679,8 +660,6 @@ document.addEventListener('DOMContentLoaded', () => {
             level: level,
         };
         
-        console.log('准备发送的记录数据:', recordData);
-        
         try {
             const response = await fetch('/records', {
                 method: 'POST',
@@ -692,8 +671,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify(recordData)
             });
 
-            console.log('API响应状态:', response.status);
-            
             if (response.status === 401) {
                 alert('请先登录后再保存记录');
                 window.location.href = '/auth/login';
@@ -716,14 +693,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const data = await response.json();
-            
-            // 只有当 avg_time_last_10 存在且不为 null 时才更新显示
-            if (data.hasOwnProperty('avg_time_last_10')) {
-                updateAverageTimeDisplay(data.avg_time_last_10);
-            } else {
-                updateAverageTimeDisplay(null);
-            }
-            
+                       
             return data;
         } catch (error) {
             console.error('保存记录时发生错误:', error);

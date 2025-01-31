@@ -28,6 +28,7 @@ router.post('/', auth, async (req, res) => {
             .select('time_spent')
             .eq('user_id', user_id)
             .eq('game_name', game_name)
+            .eq('level', level)
             .order('created_at', { ascending: false })
             .limit(10);
 

@@ -29,24 +29,30 @@ app.use(session({
     secret: process.env.SESSION_SECRET || 'your-secret-key',
     resave: false,
     saveUninitialized: false,
+    name: 'sessionId',
     cookie: {
         secure: process.env.NODE_ENV === 'production',
-        maxAge: 24 * 60 * 60 * 1000 // 24 hours
+        httpOnly: true,
+        maxAge: 24 * 60 * 60 * 1000,
+        sameSite: 'Lax'
     }
 }));
 
 // 统一的用户身份验证中间件
 app.use(async (req, res, next) => {
-    const token = req.cookies.access_token;
+    const token = req.cookies['sb-token'];
     if (token) {
         try {
             const { data: { user }, error } = await supabase.auth.getUser(token);
             if (!error && user) {
                 req.user = user;
                 res.locals.user = user;
+            } else {
+                res.clearCookie('sb-token');
             }
         } catch (err) {
             console.error('验证用户token失败:', err);
+            res.clearCookie('sb-token');
         }
     }
     next();
@@ -98,7 +104,7 @@ app.use((err, req, res, next) => {
 });
 
 // 启动服务器
-const PORT = process.env.PORT || 5400;
+const PORT = process.env.PORT || 6023;
 app.listen(PORT, () => {
   console.log(`服务器运行在 http://localhost:${PORT}`);
 });

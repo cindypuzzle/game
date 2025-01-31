@@ -12,7 +12,7 @@ RUN npm install
 COPY . .
 
 # 暴露端口（假设您的应用运行在3000端口）
-EXPOSE 3000
+EXPOSE 5000
 
 # 启动应用
-CMD ["npm", "start"] 
+CMD ["npm", "dev"] 

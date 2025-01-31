@@ -21,9 +21,17 @@ router.post('/login', async (req, res) => {
 
         if (error) throw error;
 
-        // 设置会话
+        // 设置 session
         req.session.user = data.user;
         
+        // 设置 token cookie
+        res.cookie('sb-token', data.session.access_token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'Lax',
+            maxAge: 7 * 24 * 60 * 60 * 1000
+        });
+
         console.log('登录成功:', data.user);
         res.json({ user: data.user });
     } catch (error) {
