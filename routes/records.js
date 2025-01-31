@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const supabase = require('../config/supabase');  // 使用共享的 Supabase 实例
+const { createSupabaseClient } = require('../config/supabase');
 const auth = require('../middleware/auth');
 
 // 创建游戏记录
@@ -13,6 +13,11 @@ router.post('/', auth, async (req, res) => {
 
         const { game_name, score, time_spent, level } = req.body;
         const user_id = req.user.id;
+        const access_token = req.cookies['access_token'];
+
+        if (!access_token) {
+            return res.status(401).json({ error: '未找到有效的访问令牌' });
+        }
 
         console.log('接收到的记录数据:', {
             user_id,
@@ -21,6 +26,8 @@ router.post('/', auth, async (req, res) => {
             time_spent,
             level
         });
+
+        const supabase = createSupabaseClient(access_token);
 
         // 获取用户最近10条游戏记录的平均时间
         const { data: recentRecords, error: selectError } = await supabase
@@ -74,6 +81,7 @@ router.post('/', auth, async (req, res) => {
 // 获取用户的游戏记录
 router.get('/user', auth, async (req, res) => {
   try {
+    const supabase = createSupabaseClient();
     const { data, error } = await supabase
       .from('game_records')
       .select('*')
@@ -93,6 +101,7 @@ router.get('/leaderboard/:game_name', async (req, res) => {
   try {
     const { game_name } = req.params;
     
+    const supabase = createSupabaseClient();
     const { data, error } = await supabase
       .from('game_records')
       .select(`

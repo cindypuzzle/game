@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const supabase = require('../config/supabase');
+const { createSupabaseClient } = require('../config/supabase');
 
 // 登录页面
 router.get('/', (req, res) => {
@@ -14,6 +14,7 @@ router.post('/login', async (req, res) => {
         
         console.log('尝试登录:', { email }); // 不要记录密码
         
+        const supabase = createSupabaseClient();
         const { data, error } = await supabase.auth.signInWithPassword({
             email,
             password
@@ -25,7 +26,7 @@ router.post('/login', async (req, res) => {
         req.session.user = data.user;
         
         // 设置 token cookie
-        res.cookie('sb-token', data.session.access_token, {
+        res.cookie('access_token', data.session.access_token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'Lax',
@@ -47,6 +48,7 @@ router.post('/register', async (req, res) => {
         
         console.log('尝试注册:', { email, username }); // 不要记录密码
 
+        const supabase = createSupabaseClient();
         const { data, error } = await supabase.auth.signUp({
             email,
             password,
@@ -86,11 +88,13 @@ router.post('/register', async (req, res) => {
 // 处理登出请求
 router.post('/logout', async (req, res) => {
     try {
+        const supabase = createSupabaseClient();
         const { error } = await supabase.auth.signOut();
         if (error) throw error;
 
         // 清除会话
         req.session.destroy();
+        res.clearCookie('access_token');
         
         res.json({ message: '已成功登出' });
     } catch (error) {
@@ -102,6 +106,7 @@ router.post('/logout', async (req, res) => {
 // 获取当前用户
 router.get('/user', async (req, res) => {
     try {
+        const supabase = createSupabaseClient();
         const { data: { user }, error } = await supabase.auth.getUser();
         
         if (error) throw error;
@@ -199,6 +204,7 @@ router.get('/callback', async (req, res) => {
       throw new Error('未找到访问令牌');
     }
 
+    const supabase = createSupabaseClient();
     // 使用 token 设置会话
     const { data, error: sessionError } = await supabase.auth.setSession({
       access_token,
@@ -212,7 +218,7 @@ router.get('/callback', async (req, res) => {
 
     // 设置 cookie
     if (data?.session) {
-      res.cookie('sb-token', data.session.access_token, {
+      res.cookie('access_token', data.session.access_token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'Lax',
@@ -272,6 +278,7 @@ router.post('/verify-email', async (req, res) => {
       throw new Error('验证令牌缺失');
     }
 
+    const supabase = createSupabaseClient();
     // 使用 getUser 验证 token
     const { data: { user }, error } = await supabase.auth.getUser(access_token);
 
@@ -297,6 +304,7 @@ router.post('/update-username', async (req, res) => {
       return res.status(401).json({ error: '未登录' });
     }
 
+    const supabase = createSupabaseClient();
     const { error } = await supabase.auth.updateUser({
       data: { username }
     });

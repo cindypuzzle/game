@@ -6,7 +6,7 @@ const authRouter = require('./routes/auth');
 const recordsRouter = require('./routes/records');
 const profileRouter = require('./routes/profile');
 const session = require('express-session');
-const supabase = require('./config/supabase');
+const { createSupabaseClient } = require('./config/supabase');
 require('dotenv').config();
 
 // 导入用户验证中间件
@@ -35,25 +35,34 @@ app.use(session({
         httpOnly: true,
         maxAge: 24 * 60 * 60 * 1000,
         sameSite: 'Lax'
-    }
+    },
+    rolling: true,
+    unset: 'destroy'
 }));
 
 // 统一的用户身份验证中间件
 app.use(async (req, res, next) => {
-    const token = req.cookies['sb-token'];
+    const token = req.cookies['access_token'];
     if (token) {
         try {
+            const supabase = createSupabaseClient();
             const { data: { user }, error } = await supabase.auth.getUser(token);
             if (!error && user) {
                 req.user = user;
+                req.session.user = user;
                 res.locals.user = user;
             } else {
-                res.clearCookie('sb-token');
+                res.clearCookie('access_token');
+                req.session.destroy();
             }
         } catch (err) {
             console.error('验证用户token失败:', err);
-            res.clearCookie('sb-token');
+            res.clearCookie('access_token');
+            req.session.destroy();
         }
+    } else {
+        req.user = null;
+        res.locals.user = null;
     }
     next();
 });

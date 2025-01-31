@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const supabase = require('../config/supabase');
+const { createSupabaseClient } = require('../config/supabase');
 const { requireAuth, checkUser } = require('../middleware/authMiddleware');
 
 router.get('/', checkUser, async (req, res) => {
@@ -21,6 +21,7 @@ router.get('/average-time', requireAuth, async (req, res) => {
     try {
         const { game_name, level } = req.query;
         const userId = req.user?.id;
+        const access_token = req.cookies['access_token'];
 
         console.log('请求参数:', { game_name, level, userId });
 
@@ -28,6 +29,12 @@ router.get('/average-time', requireAuth, async (req, res) => {
             console.log('用户未登录');
             return res.json({ avg_time: null });
         }
+
+        if (!access_token) {
+            return res.status(401).json({ error: '未找到有效的访问令牌' });
+        }
+
+        const supabase = createSupabaseClient(access_token);
 
         // 首先获取该用户该游戏的总游戏次数
         const { count, error: countError } = await supabase

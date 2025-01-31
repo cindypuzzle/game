@@ -7,23 +7,31 @@ if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY) {
     process.exit(1);
 }
 
-// 创建 Supabase 客户端
-const supabase = createClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_ANON_KEY,
-    {
+const createSupabaseClient = (access_token = null) => {
+    const options = {
         auth: {
             autoRefreshToken: true,
-            persistSession: true,
+            persistSession: false,
             detectSessionInUrl: true
+        },
+        global: {
+            headers: access_token ? {
+                Authorization: `Bearer ${access_token}`
+            } : {}
         }
-    }
-);
+    };
+
+    return createClient(
+        process.env.SUPABASE_URL,
+        process.env.SUPABASE_ANON_KEY,
+        options
+    );
+};
 
 // 测试连接并导出
 (async () => {
     try {
-        const { data, error } = await supabase.auth.getSession();
+        const { data, error } = await createSupabaseClient().auth.getSession();
         if (error) {
             console.error('Supabase 连接测试失败:', error);
         } else {
@@ -35,4 +43,4 @@ const supabase = createClient(
 })();
 
 // 确保导出的是正确初始化的客户端实例
-module.exports = supabase;
+module.exports = { createSupabaseClient };
