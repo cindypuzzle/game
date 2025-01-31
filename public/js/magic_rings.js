@@ -66,6 +66,14 @@ document.addEventListener('DOMContentLoaded', () => {
         hintButton.addEventListener('click', showHint);
     }
 
+    // 添加游戏状态相关变量
+    let gameState = {
+        isPlaying: false,
+        startTimeStamp: null,
+        currentDifficulty: 'medium',
+        selectedRings: []
+    };
+
     // 初始加载时就创建游戏
     createRings();
     updateScoreDisplay();
@@ -77,10 +85,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
-                    // 添加认证 token
                     'Authorization': `Bearer ${getCookie('access_token')}`
                 },
-                credentials: 'include'  // 确保发送 cookies
+                credentials: 'include'
             });
             
             if (!response.ok) {
@@ -89,39 +96,95 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const data = await response.json();
             
-            // 更新平均用时显示
             if (data.avg_time !== null) {
                 updateAverageTimeDisplay(data.avg_time);
             } else {
                 updateAverageTimeDisplay(null);
             }
 
-            // 继续原有的开始游戏逻辑
-            startOverlay.style.display = 'none';
-            createRings();
-            startTimer();
+            // 开始新游戏
+            startNewGame();
         } catch (error) {
             console.error('获取平均用时时发生错误:', error);
             updateAverageTimeDisplay(null);
-            // 即使获取平均用时失败，也继续开始游戏
-            startOverlay.style.display = 'none';
-            createRings();
-            startTimer();
+            startNewGame();
         }
     });
 
     // 修改重新开始按钮的处理
     if (restartButton) {
         restartButton.addEventListener('click', () => {
-            stopTimer();
-            createRings(); // 重新创建游戏
-            startOverlay.style.display = 'flex';
-            messageElement.textContent = '';
-            messageElement.className = '';
+            // 检查当前游戏时长
+            if (gameState.isPlaying) {
+                const currentGameTime = Date.now() - gameState.startTimeStamp;
+                const fiveMinutes = 5 * 60 * 1000; // 5分钟转换为毫秒
+                
+                if (currentGameTime > fiveMinutes) {
+                    // 如果游戏时间超过5分钟，重置计时
+                    gameState.isPlaying = false;
+                    gameState.startTimeStamp = null;
+                    saveGameState();
+                    startNewGame(); // 这将重新开始游戏和计时
+                } else {
+                    // 如果未超过5分钟，只重置游戏内容
+                    createRings();
+                    startOverlay.style.display = 'flex';
+                    messageElement.textContent = '';
+                    messageElement.className = '';
+                    
+                    gameState.selectedRings = [];
+                    saveGameState();
+                }
+            } else {
+                // 如果游戏未在进行中，直接重新开始
+                createRings();
+                startOverlay.style.display = 'flex';
+                messageElement.textContent = '';
+                messageElement.className = '';
+            }
         });
     }
 
-    // 修改 createRings 函数，移除自动开始计时的部分
+    // 添加开始新游戏的函数
+    function startNewGame() {
+        startOverlay.style.display = 'none';
+        createRings();
+        
+        // 只在游戏未开始时初始化计时
+        if (!gameState.isPlaying) {
+            gameState.isPlaying = true;
+            gameState.startTimeStamp = Date.now();
+            gameState.currentDifficulty = currentDifficulty;
+            
+            // 保存游戏状态到 localStorage
+            saveGameState();
+            
+            // 开始计时
+            startTimer();
+        }
+    }
+
+    // 添加保存游戏状态的函数
+    function saveGameState() {
+        localStorage.setItem('magicRingsGameState', JSON.stringify(gameState));
+    }
+
+    // 添加加载游戏状态的函数
+    function loadGameState() {
+        const savedState = localStorage.getItem('magicRingsGameState');
+        if (savedState) {
+            gameState = JSON.parse(savedState);
+            
+            // 如果游戏正在进行中，恢复游戏状态
+            if (gameState.isPlaying) {
+                startOverlay.style.display = 'none';
+                createRings();
+                startTimer();
+            }
+        }
+    }
+
+    // 修改 createRings 函数，确保不影响计时
     function createRings() {
         ringsContainer.innerHTML = '';
         rings = [];
@@ -140,11 +203,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         selectionOrder = 0;
 
-        startTime = new Date();
+        // 只重置尝试次数，不影响计时
         attempts = 0;
         updateScoreDisplay();
 
-        hintsUsed = 0;  // 重置提示使用次数
+        // 重置提示相关状态
+        hintsUsed = 0;
         if (hintButton) {
             if (showHintButton) {
                 hintButton.style.display = 'block';
@@ -489,24 +553,32 @@ document.addEventListener('DOMContentLoaded', () => {
     // 修改计时器相关函数
     function startTimer() {
         timerElement = document.getElementById('timer');
-        startTimeStamp = Date.now();  // 记录开始时间戳
+        
+        // 如果有保存的开始时间，使用保存的时间
+        startTimeStamp = gameState.startTimeStamp || Date.now();
         
         // 清除可能存在的旧计时器
         if (timerInterval) {
             clearInterval(timerInterval);
         }
         
-        // 启动新计时器，每10毫秒更新一次
+        // 启动新计时器
         timerInterval = setInterval(() => {
             updateTimerDisplay();
-        }, 10);  // 设置为10毫秒更新一次
+        }, 10);
     }
 
     function stopTimer() {
         if (timerInterval) {
             clearInterval(timerInterval);
         }
-        return Date.now() - startTimeStamp;  // 返回总用时（毫秒）
+        
+        // 清除游戏状态
+        gameState.isPlaying = false;
+        gameState.startTimeStamp = null;
+        saveGameState();
+        
+        return Date.now() - startTimeStamp;
     }
 
     function updateTimerDisplay() {
@@ -528,8 +600,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 修改 celebrateSuccess 函数
     async function celebrateSuccess() {
-        const timeSpent = Date.now() - startTimeStamp;
-        const score = calculateScore(timeSpent, attempts);
+        const totalTime = stopTimer();
+        const score = calculateScore(totalTime, attempts);
         const level = currentDifficulty;
 
         // 先将平均用时显示重置为 --:--
@@ -608,7 +680,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // 在展示庆祝效果的同时，异步保存记录和更新数据
         try {
             // 保存游戏记录
-            await saveGameRecord(score, timeSpent, level);
+            await saveGameRecord(score, totalTime, level);
             
             // 获取最新的平均用时
             const response = await fetch(`/game/magic-rings/average-time?game_name=magic_rings&level=${currentDifficulty}`, {
@@ -839,4 +911,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }, 1000);
     }
+
+    // 加载保存的游戏状态
+    loadGameState();
 });
