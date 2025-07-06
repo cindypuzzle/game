@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let hintsUsed = 0;  // 添加提示使用次数计数
 
-    let showHintButton = true; // 添加提示按钮显示开关
+    let showHintButton = false; // 添加提示按钮显示开关
 
     let isPenaltyActive = false;
 

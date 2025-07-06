@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const supabase = require('../config/supabase');
+const { createSupabaseClient } = require('../config/supabase');
 const { requireAuth } = require('../middleware/authMiddleware');
 
 // 游戏列表配置
@@ -32,6 +32,7 @@ router.get('/', requireAuth, async (req, res) => {
 router.get('/records', requireAuth, async (req, res) => {
     try {
         console.log('正在获取用户记录，用户ID:', req.user.id);
+        const supabase = createSupabaseClient(req.user.access_token);
         
         const { data, error } = await supabase
             .from('game_records')
@@ -57,6 +58,8 @@ router.get('/records/:gameId', requireAuth, async (req, res) => {
     try {
         const gameId = req.params.gameId;
         console.log('正在获取游戏记录，游戏ID:', gameId, '用户ID:', req.user.id);
+        
+        const supabase = createSupabaseClient(req.user.access_token);
         
         const { data, error } = await supabase
             .from('game_records')
